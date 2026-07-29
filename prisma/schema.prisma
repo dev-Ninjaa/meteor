@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum TaskStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VerificationStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+enum VerificationMode {
+  AI
+  MANUAL
+  BOTH
+}
+
+enum EscrowStatus {
+  UNLOCKED
+  LOCKED
+  RELEASED
+  REFUNDED
+}
+
+enum TransactionStatus {
+  PENDING
+  LOCKED
+  RELEASED
+  REFUNDED
+  CANCELLED
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  username     String?   @unique
+  email        String?   @unique
+  password     String?
+  role         UserRole  @default(USER)
+  avatarUrl    String?   @map("avatar_url")
+  bio          String?
+  walletAddress String?  @unique @map("wallet_address")
+  nonce        String?
+  reputation   Int       @default(0)
+  isVerified   Boolean   @default(false) @map("is_verified")
+  metadata     Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdTasks          Task[]           @relation("CreatedTasks")
+  taskWorkers           TaskWorker[]
+  submissions           Submission[]
+  transactions          Transaction[]
+  sentNotifications     Notification[] @relation("SentNotifications")
+  receivedNotifications Notification[] @relation("ReceivedNotifications")
+  verificationResults   Verification[] @relation("Verifier")
+
+  @@map("users")
+}
+
+model Task {
+  id          String       @id @default(uuid()) @db.Uuid
+  title       String
+  description String
+  reward      Decimal      @db.Decimal(18, 8)
+  tokenAddress String?     @map("token_address")
+  status      TaskStatus   @default(OPEN)
+  aiGenerated Boolean      @default(false) @map("ai_generated")
+  aiPrompt    String?      @map("ai_prompt")
+  tags        String[]
+
+  workersRequired Int          @default(1) @map("workers_required")
+  workersJoined   Int          @default(0) @map("workers_joined")
+  workersCompleted Int         @default(0) @map("workers_completed")
+  maxWorkers      Int          @default(1) @map("max_workers")
+  verificationMode VerificationMode @default(AI) @map("verification_mode")
+  allowAiVerification    Boolean @default(true) @map("allow_ai_verification")
+  manualVerificationRequired Boolean @default(false) @map("manual_verification_required")
+  escrowStatus    EscrowStatus @default(UNLOCKED) @map("escrow_status")
+
+  createdById String @map("created_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  creator      User          @relation("CreatedTasks", fields: [createdById], references: [id])
+  taskWorkers  TaskWorker[]
+  submissions  Submission[]
+  transactions Transaction[]
+
+  @@map("tasks")
+}
+
+model TaskWorker {
+  id        String   @id @default(uuid()) @db.Uuid
+  status    String   @default("JOINED")
+
+  taskId String @map("task_id")
+  userId String @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
+  @@map("task_workers")
+}
+
+model Submission {
+  id        String           @id @default(uuid()) @db.Uuid
+  content   String
+  proof     String?
+  status    SubmissionStatus @default(PENDING)
+  aiScore   Float?           @map("ai_score")
+  aiFeedback String?         @map("ai_feedback")
+
+  submittedAt DateTime @default(now()) @map("submitted_at")
+  reviewedAt  DateTime? @map("reviewed_at")
+  approvedAt  DateTime? @map("approved_at")
+  rejectedAt  DateTime? @map("rejected_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  taskId   String @map("task_id")
+  workerId String @map("worker_id")
+
+  task   Task          @relation(fields: [taskId], references: [id])
+  worker User          @relation(fields: [workerId], references: [id])
+  verification Verification?
+
+  @@map("submissions")
+}
+
+model Transaction {
+  id           String             @id @default(uuid()) @db.Uuid
+  amount       Decimal            @db.Decimal(18, 8)
+  tokenAddress String?            @map("token_address")
+  txHash       String?            @map("tx_hash")
+  chainId      Int?               @map("chain_id")
+  blockNumber  BigInt?            @map("block_number")
+  gasUsed      String?            @map("gas_used")
+  status       TransactionStatus  @default(PENDING)
+  type         String
+
+  taskId String @map("task_id")
+  userId String @map("user_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("transactions")
+}
+
+model Verification {
+  id          String             @id @default(uuid()) @db.Uuid
+  status      VerificationStatus @default(PENDING)
+  aiScore     Float?             @map("ai_score")
+  aiFeedback  String?            @map("ai_feedback")
+  manualNotes String?            @map("manual_notes")
+  isManual    Boolean            @default(false) @map("is_manual")
+
+  submissionId String  @unique @map("submission_id")
+  verifiedById String? @map("verified_by_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+  verifier   User?      @relation("Verifier", fields: [verifiedById], references: [id])
+
+  @@map("verifications")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  metadata  Json?
+
+  senderId   String? @map("sender_id")
+  receiverId String  @map("receiver_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  sender   User? @relation("SentNotifications", fields: [senderId], references: [id])
+  receiver User  @relation("ReceivedNotifications", fields: [receiverId], references: [id])
+
+  @@map("notifications")
+}
