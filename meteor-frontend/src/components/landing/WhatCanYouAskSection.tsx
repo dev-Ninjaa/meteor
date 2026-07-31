@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Eye, Bot, Rocket, Palette, Globe2 } from 'lucide-react';
+import { FadingVideo } from '../shared/FadingVideo';
 
 const ASK_CARDS = [
   {
@@ -74,6 +75,15 @@ const ASK_CARDS = [
 export const WhatCanYouAskSection: React.FC = () => {
   return (
     <section className="relative py-28 px-6 md:px-16 lg:px-20 bg-black overflow-hidden border-t border-white/10">
+      {/* Background Video with smooth crossfade matching website theme */}
+      <FadingVideo
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4"
+        className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 pointer-events-none"
+      />
+
+      {/* Dark Gradient Overlay for high-contrast text and liquid-glass cards */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black z-0 pointer-events-none" />
+
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Label & Header */}
         <motion.div
