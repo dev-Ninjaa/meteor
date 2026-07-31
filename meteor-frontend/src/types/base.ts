@@ -1,8 +1,15 @@
 // Base types
-export type UUID = string & { readonly __brand: unique symbol };
-export type Address = `0x${string}` & { readonly __brand: unique symbol };
-export type Hex = `0x${string}` & { readonly __brand: unique symbol };
-export type Timestamp = string & { readonly __brand: unique symbol };
+export type UUID = string;
+export type Address = `0x${string}`;
+export type Hex = `0x${string}`;
+export type Timestamp = string;
+
+export type Chain = {
+  id: number;
+  name: string;
+  nativeCurrency: { name: string; symbol: string; decimals: number };
+  rpcUrls: { default: { http: string[] } };
+};
 
 export type PaginatedResponse<T> = {
   data: T[];

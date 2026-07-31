@@ -1,6 +1,7 @@
 // Task types
-import type { Address, Timestamp, QueryParams } from './base';
-import type { PaginatedResponse } from './base';
+import type { Address, Timestamp, QueryParams, PaginatedResponse } from './base';
+
+export type { PaginatedResponse };
 
 export type TaskStatus = 'DRAFT' | 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'DISPUTED';
 export type VerificationMode = 'AI' | 'MANUAL' | 'BOTH';

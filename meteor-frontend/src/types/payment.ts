@@ -1,6 +1,8 @@
 // Payment types
 import type { Timestamp, PaginatedResponse, QueryParams, Address } from './base';
 
+export type { PaginatedResponse };
+
 export type TransactionStatus = 'PENDING' | 'LOCKED' | 'RELEASED' | 'REFUNDED' | 'CANCELLED';
 
 export type Transaction = {
