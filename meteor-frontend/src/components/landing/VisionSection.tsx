@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Sparkles, MapPin, Cpu } from 'lucide-react';
+import { FadingVideo } from '../shared/FadingVideo';
 
 const HIGHLIGHT_CARDS = [
   {
@@ -32,6 +33,15 @@ const HIGHLIGHT_CARDS = [
 export const VisionSection: React.FC = () => {
   return (
     <section className="relative py-28 px-6 md:px-16 lg:px-20 bg-black overflow-hidden border-t border-white/10">
+      {/* Background Video with smooth crossfade matching website theme */}
+      <FadingVideo
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260508_215831_c6a8989c-d716-4d8d-8745-e972a2eec711.mp4"
+        className="absolute inset-0 w-full h-full object-cover z-0 opacity-50 pointer-events-none"
+      />
+
+      {/* Dark Gradient Overlay for high-contrast text and liquid-glass cards */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black z-0 pointer-events-none" />
+
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Label & Header */}
         <motion.div
@@ -73,7 +83,7 @@ export const VisionSection: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                className="liquid-glass rounded-2xl p-6 flex flex-col justify-between border border-white/10 hover:border-white/20 transition-all hover:-translate-y-1"
+                className="liquid-glass rounded-2xl p-6 flex flex-col justify-between border border-white/10 hover:border-white/20 transition-all hover:-translate-y-1 backdrop-blur-xl"
               >
                 <div className="w-10 h-10 rounded-xl liquid-glass flex items-center justify-center mb-6 border border-white/10">
                   <Icon className={`w-5 h-5 ${card.color}`} />
