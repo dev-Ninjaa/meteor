@@ -1,58 +1,15 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { BlurText } from '../shared/BlurText';
-import { GithubIcon } from '../shared/GithubIcon';
 import { useAppStore } from '../../store/useAppStore';
-import { Star, ArrowUpRight, Globe, Shield, Terminal } from 'lucide-react';
+import { Star, Globe, Shield, Terminal } from 'lucide-react';
 
 export const OpenSourceSection: React.FC = () => {
   const { setActiveTab } = useAppStore();
 
   return (
-    <footer className="relative py-28 px-6 bg-black border-t border-white/10 overflow-hidden">
+    <footer className="relative py-16 px-6 bg-black border-t border-white/10 overflow-hidden">
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* Call To Action Box */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="liquid-glass-strong rounded-3xl p-8 sm:p-12 border border-white/20 text-center relative overflow-hidden mb-20 bg-gradient-to-b from-white/5 to-transparent"
-        >
-          <div className="absolute top-0 right-1/2 translate-x-1/2 w-96 h-96 bg-[#836EF9]/15 blur-3xl pointer-events-none" />
-
-          <BlurText
-            text="Ready to experience the future of work?"
-            className="font-heading italic text-4xl sm:text-6xl text-white tracking-tight leading-tight justify-center max-w-2xl mx-auto mb-4"
-          />
-
-          <p className="text-sm sm:text-base text-white/70 max-w-xl mx-auto mb-8 font-light">
-            Try the marketplace, publish tasks via AI prompt, or verify microtasks and earn instant MON payouts.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <button
-              onClick={() => setActiveTab('marketplace')}
-              className="bg-white text-black font-semibold text-sm rounded-full px-8 py-4 flex items-center gap-2 shadow-2xl hover:bg-white/90 transition-all hover:scale-105"
-            >
-              <span>Try MVP Marketplace</span>
-              <ArrowUpRight className="w-4 h-4" />
-            </button>
-
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="liquid-glass rounded-full px-8 py-4 text-sm font-medium text-white hover:bg-white/10 transition-all flex items-center gap-2 border border-white/15"
-            >
-              <GithubIcon className="w-4 h-4" />
-              <span>Star on GitHub (1.4k)</span>
-            </a>
-          </div>
-        </motion.div>
-
         {/* Footer Navigation & Open Source Meta */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pt-12 border-t border-white/10 text-xs text-white/60">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-xs text-white/60">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Globe className="w-4 h-4 text-[#836EF9]" />
