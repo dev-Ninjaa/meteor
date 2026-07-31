@@ -57,39 +57,50 @@ export const Navbar: React.FC = () => {
             </a>
           </div>
         ) : (
-          <div className="flex items-center gap-1 liquid-glass rounded-full px-2 py-1 bg-black/40 border border-white/5">
+          <div className="flex items-center gap-1 liquid-glass rounded-full px-2 py-1 bg-black/40 border border-white/10 backdrop-blur-2xl">
             <button
               onClick={() => setActiveTab('marketplace')}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
                 activeTab === 'marketplace'
-                  ? 'bg-white/15 text-white shadow-inner font-semibold'
+                  ? 'bg-white text-black font-semibold shadow-lg'
                   : 'text-white/70 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Store className="w-3.5 h-3.5 text-[#836EF9]" />
-              Marketplace
+              <Store className="w-3.5 h-3.5" />
+              <span>Marketplace</span>
             </button>
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
                 activeTab === 'dashboard'
-                  ? 'bg-white/15 text-white shadow-inner font-semibold'
+                  ? 'bg-white text-black font-semibold shadow-lg'
                   : 'text-white/70 hover:text-white hover:bg-white/5'
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
-              Dashboard
+              <span>My Tasks</span>
             </button>
             <button
               onClick={() => setActiveTab('wallet')}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
                 activeTab === 'wallet'
-                  ? 'bg-white/15 text-white shadow-inner font-semibold'
+                  ? 'bg-white text-black font-semibold shadow-lg'
                   : 'text-white/70 hover:text-white hover:bg-white/5'
               }`}
             >
               <Wallet className="w-3.5 h-3.5" />
-              Wallet
+              <span>Wallet</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5 transition-all ${
+                activeTab === 'profile'
+                  ? 'bg-white text-black font-semibold shadow-lg'
+                  : 'text-white/70 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>Profile</span>
             </button>
           </div>
         )}
