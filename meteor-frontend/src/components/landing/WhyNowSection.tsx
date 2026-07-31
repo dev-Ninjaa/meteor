@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { XCircle, CheckCircle2, Quote } from 'lucide-react';
+import { XCircle, CheckCircle2 } from 'lucide-react';
 
 const EXISTING_PLATFORM_POINTS = [
   'Built for projects',
@@ -118,7 +118,6 @@ export const WhyNowSection: React.FC = () => {
 
             {/* Highlighted Glass Quote */}
             <div className="liquid-glass rounded-xl p-4 border border-white/15 bg-white/5 relative overflow-hidden">
-              <Quote className="w-6 h-6 text-[#836EF9]/30 absolute top-2 right-2 pointer-events-none" />
               <p className="font-heading italic text-white text-sm sm:text-base leading-snug">
                 "The future won't hire people. It will request intelligence."
               </p>

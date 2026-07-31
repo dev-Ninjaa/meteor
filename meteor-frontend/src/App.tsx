@@ -7,6 +7,7 @@ import { CapabilitiesSection } from './components/landing/CapabilitiesSection';
 import { VisionSection } from './components/landing/VisionSection';
 import { HowItWorksSection } from './components/landing/HowItWorksSection';
 import { WhyNowSection } from './components/landing/WhyNowSection';
+import { WhatCanYouAskSection } from './components/landing/WhatCanYouAskSection';
 import { OpenSourceSection } from './components/landing/OpenSourceSection';
 
 import { MarketplaceView } from './features/marketplace/MarketplaceView';
@@ -34,6 +35,7 @@ export const App: React.FC = () => {
             <VisionSection />
             <HowItWorksSection />
             <WhyNowSection />
+            <WhatCanYouAskSection />
             <OpenSourceSection />
           </>
         )}
