@@ -21,10 +21,6 @@ export const OpenSourceSection: React.FC = () => {
         >
           <div className="absolute top-0 right-1/2 translate-x-1/2 w-96 h-96 bg-[#836EF9]/15 blur-3xl pointer-events-none" />
 
-          <span className="text-xs font-mono uppercase tracking-widest text-[#836EF9] mb-4 inline-block font-semibold">
-            Monad Ecosystem Hackathon MVP
-          </span>
-
           <BlurText
             text="Ready to experience the future of work?"
             className="font-heading italic text-4xl sm:text-6xl text-white tracking-tight leading-tight justify-center max-w-2xl mx-auto mb-4"
