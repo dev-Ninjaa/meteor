@@ -4,7 +4,7 @@ import { GithubIcon } from '../shared/GithubIcon';
 import { Globe, ArrowUpRight, Wallet, LayoutDashboard, Store } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { activeTab, setActiveTab, isConnected, walletAddress, monBalance, connectWallet } = useAppStore();
+  const { activeTab, setActiveTab, isConnected, monBalance, connectWallet } = useAppStore();
 
   return (
     <header className="fixed top-4 left-0 right-0 z-50 px-4 md:px-8 max-w-7xl mx-auto pointer-events-none">
@@ -19,9 +19,6 @@ export const Navbar: React.FC = () => {
           </div>
           <span className="font-heading italic text-2xl text-white tracking-tight font-semibold">
             Meteor
-          </span>
-          <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] uppercase font-mono tracking-widest bg-white/10 text-white/80 rounded-full border border-white/10">
-            Monad MVP
           </span>
         </button>
 
@@ -93,8 +90,6 @@ export const Navbar: React.FC = () => {
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[#836EF9] font-bold">{monBalance.toFixed(1)} MON</span>
-              <span className="hidden sm:inline text-white/60">|</span>
-              <span className="hidden sm:inline text-white/80">{walletAddress}</span>
             </button>
           ) : (
             <button

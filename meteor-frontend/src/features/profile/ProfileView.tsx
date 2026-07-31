@@ -3,7 +3,6 @@ import { useAppStore } from '../../store/useAppStore';
 import { ShieldCheck, Award, CheckCircle2, Zap, Star, UserCheck, Terminal } from 'lucide-react';
 
 export const ProfileView: React.FC = () => {
-  const { walletAddress } = useAppStore();
 
   const skills = [
     'AI Red-Teaming',
@@ -27,12 +26,12 @@ export const ProfileView: React.FC = () => {
       <div className="liquid-glass rounded-3xl p-8 border border-white/10 mb-8 relative overflow-hidden bg-[#111113]/90">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#836EF9] to-indigo-500 flex items-center justify-center text-black font-bold font-mono text-xl shadow-xl shadow-[#836EF9]/20 border-2 border-white">
-            0x71
+            MN
           </div>
 
           <div className="flex-1">
             <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-white font-mono">{walletAddress}</h1>
+              <h1 className="text-xl font-bold text-white font-mono">Swarm Worker Node</h1>
               <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono uppercase">
                 Verified Node
               </span>

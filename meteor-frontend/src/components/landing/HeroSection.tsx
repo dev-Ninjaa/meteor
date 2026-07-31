@@ -10,7 +10,7 @@ export const HeroSection: React.FC = () => {
   const { setActiveTab } = useAppStore();
 
   return (
-    <section className="relative min-h-screen w-full bg-black overflow-hidden flex flex-col items-center justify-between text-center pt-28 pb-12 px-6">
+    <section className="relative min-h-screen w-full bg-black overflow-hidden flex flex-col items-center justify-between text-center pt-24 pb-12 px-6">
       {/* Background Video with custom JS crossfade */}
       <FadingVideo
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4"
@@ -21,30 +21,13 @@ export const HeroSection: React.FC = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/30 to-black z-0 pointer-events-none" />
 
       {/* Hero Main Content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-5xl mx-auto my-auto py-8">
-        
-        {/* Top Badge */}
-        <motion.div
-          initial={{ filter: 'blur(10px)', opacity: 0, y: 20 }}
-          animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="liquid-glass rounded-full px-4 py-1.5 mb-6 inline-flex items-center gap-2.5 backdrop-blur-md"
-        >
-          <span className="bg-white text-black px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider">
-            Monad MVP v1
-          </span>
-          <span className="text-xs text-white/90 font-medium flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#836EF9] animate-ping" />
-            Programmable Human Intelligence On-Demand
-          </span>
-        </motion.div>
-
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-5xl mx-auto mt-4 mb-auto py-4">
         {/* Hero Heading with Instrument Serif */}
         <div className="mb-6">
           <BlurText
             text="Human Intelligence. On Demand."
             className="text-5xl sm:text-7xl lg:text-8xl font-heading italic text-white leading-[0.9] tracking-[-3px] max-w-4xl"
-            delay={0.4}
+            delay={0.2}
           />
         </div>
 
@@ -52,7 +35,7 @@ export const HeroSection: React.FC = () => {
         <motion.p
           initial={{ filter: 'blur(10px)', opacity: 0, y: 20 }}
           animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
           className="text-base sm:text-lg text-white/80 max-w-2xl font-light leading-relaxed mb-8 px-4"
         >
           The fastest way for people and AI agents to collaborate through instant, AI-verified microtasks settled on Monad.

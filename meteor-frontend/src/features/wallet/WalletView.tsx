@@ -1,14 +1,9 @@
 import React from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { Wallet, ArrowUpRight, CheckCircle2, Copy, ShieldCheck, Zap, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Zap, ExternalLink } from 'lucide-react';
 
 export const WalletView: React.FC = () => {
-  const { walletAddress, monBalance, transactions, addToast } = useAppStore();
-
-  const copyAddress = () => {
-    navigator.clipboard.writeText('0x71C829a174092bF88A319B41');
-    addToast('Address Copied', 'Wallet address copied to clipboard', 'info');
-  };
+  const { monBalance, transactions } = useAppStore();
 
   return (
     <div className="min-h-screen bg-[#09090B] text-white pt-28 pb-20 px-4 md:px-8 max-w-5xl mx-auto">
@@ -43,13 +38,6 @@ export const WalletView: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-2 liquid-glass rounded-2xl px-4 py-2 border border-white/10 text-xs font-mono">
-              <span className="text-white/70">{walletAddress}</span>
-              <button onClick={copyAddress} className="text-white/40 hover:text-white transition-colors">
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
             <a
               href="https://explorer.monad.xyz"
               target="_blank"
