@@ -1,0 +1,95 @@
+MVP Feature 1: AI Task Creator
+
+Instead of creating a long job post, users describe what they need in plain English.
+
+Example
+
+User types:
+
+"I need 20 people to review my landing page."
+
+AI automatically generates:
+
+Reward: $0.20/person
+Time: 2 minutes
+Workers needed: 20
+Instructions:
+Visit the website
+Rate design (1–5)
+Mention one confusing thing
+
+Click Publish.
+
+Why it's cool: AI becomes the project manager.
+
+
+
+
+-----------------------------------------------
+
+MVP Feature 2: Bounty Swarm Marketplace
+
+Instead of one freelancer doing the work, many people (or AI agents) complete it simultaneously.
+
+Example
+
+Task:
+
+"Choose the best logo."
+
+Need: 50 opinions
+
+Within 2 minutes:
+
+50 people vote
+AI summarizes the results
+User gets a clear winner
+
+Another example:
+
+"Find bugs in my website."
+
+100 people test at the same time.
+
+10 bugs found in minutes instead of days.
+
+Winning point: Speed through swarm intelligence. 
+
+[ it's like a fast bounty ]
+
+
+
+
+-----------------------
+
+MVP Feature 3: AI Verification + Instant Payment
+
+When someone submits work, AI checks it automatically.
+
+If it's valid:
+
+✅ Task approved
+
+✅ Monad releases payment instantly
+
+Example
+
+Task:
+
+"Translate this paragraph."
+
+Worker submits translation.
+
+AI compares quality.
+
+If score >90%:
+
+→ Payment released automatically.
+
+If AI isn't confident:
+
+→ Send to another human for review.
+
+Winning point: No waiting, no manual approval. 
+
+also ek manual verification ka option rakh dena if they enable it then fund will be released after manual selections
