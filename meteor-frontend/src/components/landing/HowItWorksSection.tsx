@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Cpu, Users, Zap, Terminal } from 'lucide-react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { FileText, Cpu, Users, Zap } from 'lucide-react';
 
 const TIMELINE_STEPS = [
   {
@@ -29,25 +29,7 @@ const TIMELINE_STEPS = [
   },
 ];
 
-const EXAMPLE_TASKS = [
-  'Can someone check if this café is actually open?',
-  'Find 20 bugs in my website.',
-  'Which logo would you trust more?',
-  'Verify this AI-generated legal summary.',
-  'Take a photo of Times Square right now.',
-  'Test my checkout flow on an iPhone.',
-];
-
 export const HowItWorksSection: React.FC = () => {
-  const [activeTaskIndex, setActiveTaskIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveTaskIndex((prev) => (prev + 1) % EXAMPLE_TASKS.length);
-    }, 3500);
-    return () => clearInterval(timer);
-  }, []);
-
   return (
     <section className="relative py-28 px-6 md:px-16 lg:px-20 bg-black overflow-hidden border-t border-white/10">
       <div className="max-w-7xl mx-auto relative z-10">
@@ -69,7 +51,7 @@ export const HowItWorksSection: React.FC = () => {
         </motion.div>
 
         {/* 4-Step Horizontal Timeline */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
           {TIMELINE_STEPS.map((stepItem, idx) => {
             const Icon = stepItem.icon;
             return (
@@ -104,41 +86,6 @@ export const HowItWorksSection: React.FC = () => {
             );
           })}
         </div>
-
-        {/* Compact Glass Card: Example Tasks */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="liquid-glass rounded-2xl p-6 border border-white/10 max-w-3xl mx-auto backdrop-blur-xl"
-        >
-          <div className="flex items-center justify-between mb-4 border-b border-white/10 pb-3">
-            <div className="flex items-center gap-2 text-xs font-mono text-white/60 uppercase tracking-widest font-medium">
-              <Terminal className="w-4 h-4 text-[#836EF9]" />
-              <span>Example Tasks</span>
-            </div>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20">
-              Live Swarm Queue
-            </span>
-          </div>
-
-          <div className="min-h-[56px] flex items-center px-4 py-3 rounded-xl bg-black/40 border border-white/5 font-mono text-xs sm:text-sm text-white/90">
-            <span className="text-[#836EF9] mr-3 font-semibold select-none">$</span>
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={activeTaskIndex}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4 }}
-                className="inline-block"
-              >
-                "{EXAMPLE_TASKS[activeTaskIndex]}"
-              </motion.span>
-            </AnimatePresence>
-          </div>
-        </motion.div>
       </div>
     </section>
   );
