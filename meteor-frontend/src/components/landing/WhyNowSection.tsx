@@ -20,7 +20,7 @@ const OUR_PLATFORM_POINTS = [
 
 export const WhyNowSection: React.FC = () => {
   return (
-    <section className="relative py-28 px-6 md:px-16 lg:px-20 bg-black overflow-hidden border-t border-white/10">
+    <section id="why-now" className="relative py-28 px-6 md:px-16 lg:px-20 bg-black overflow-hidden border-t border-white/10">
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Label & Header */}
         <motion.div

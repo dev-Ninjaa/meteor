@@ -22,8 +22,41 @@ export const Navbar: React.FC = () => {
           </span>
         </button>
 
-        {/* Center: App Navigation links (only when inside the App views) */}
-        {activeTab !== 'landing' && (
+        {/* Center: Landing Section links or App Navigation */}
+        {activeTab === 'landing' ? (
+          <div className="hidden md:flex items-center gap-6">
+            <a
+              href="#thesis"
+              className="text-xs font-medium text-white/70 hover:text-white transition-colors"
+            >
+              Thesis
+            </a>
+            <a
+              href="#vision"
+              className="text-xs font-medium text-white/70 hover:text-white transition-colors"
+            >
+              Vision
+            </a>
+            <a
+              href="#how-it-works"
+              className="text-xs font-medium text-white/70 hover:text-white transition-colors"
+            >
+              How It Works
+            </a>
+            <a
+              href="#why-now"
+              className="text-xs font-medium text-white/70 hover:text-white transition-colors"
+            >
+              Why Now
+            </a>
+            <a
+              href="#use-cases"
+              className="text-xs font-medium text-white/70 hover:text-white transition-colors"
+            >
+              Use Cases
+            </a>
+          </div>
+        ) : (
           <div className="flex items-center gap-1 liquid-glass rounded-full px-2 py-1 bg-black/40 border border-white/5">
             <button
               onClick={() => setActiveTab('marketplace')}

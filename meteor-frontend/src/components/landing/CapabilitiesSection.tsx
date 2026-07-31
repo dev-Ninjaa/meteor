@@ -4,7 +4,7 @@ import { Globe, DollarSign, Brain } from 'lucide-react';
 
 export const CapabilitiesSection: React.FC = () => {
   return (
-    <section className="relative w-full bg-black overflow-hidden flex flex-col justify-start px-6 md:px-16 lg:px-20 py-20 md:py-24 border-t border-white/10">
+    <section id="thesis" className="relative w-full bg-black overflow-hidden flex flex-col justify-start px-6 md:px-16 lg:px-20 py-20 md:py-24 border-t border-white/10">
       {/* Content Container */}
       <div className="relative z-10 max-w-7xl mx-auto w-full flex flex-col justify-start">
         {/* Header */}
