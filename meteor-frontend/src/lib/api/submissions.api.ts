@@ -1,6 +1,5 @@
 import { api } from './index';
-import type { Submission, CreateSubmissionDto, ManualVerifyDto, Verification } from '../../types/submission';
-import type { AiVerifyResult } from '../../types/ai';
+import type { Submission, CreateSubmissionDto, ManualVerifyDto, Verification, AiVerifyResult } from '../../types/submission';
 
 export const submissionsApi = {
   listByTask: (taskId: string) => 

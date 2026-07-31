@@ -1,13 +1,14 @@
 // Auth hooks
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '../lib/api';
+import type { Address } from '../types/base';
 
 export function useAuth() {
   const queryClient = useQueryClient();
 
   const login = useMutation({
     mutationFn: async ({ address, signature, nonce }: { address: string; signature: string; nonce: string }) => {
-      return authApi.verify({ address, signature, nonce });
+      return authApi.verify({ address: address as Address, signature, nonce });
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['user', 'me'], data.user);
