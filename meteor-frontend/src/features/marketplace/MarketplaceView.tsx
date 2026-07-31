@@ -3,7 +3,9 @@ import { useAppStore } from '../../store/useAppStore';
 import { TaskItem } from '../../data/mockData';
 import { motion } from 'framer-motion';
 import { FadingVideo } from '../../components/shared/FadingVideo';
-import { Search, Plus, Clock, Users, ShieldCheck, Zap, ArrowUpRight } from 'lucide-react';
+import { VerificationBadge } from '../../components/shared/VerificationBadge';
+import { ProgressIndicator } from '../../components/shared/ProgressIndicator';
+import { Search, Plus, Clock, Zap, ArrowUpRight, Filter } from 'lucide-react';
 
 export const MarketplaceView: React.FC = () => {
   const {
@@ -12,6 +14,10 @@ export const MarketplaceView: React.FC = () => {
     setSearchQuery,
     selectedCategory,
     setSelectedCategory,
+    selectedSubmissionType,
+    setSelectedSubmissionType,
+    selectedVerificationType,
+    setSelectedVerificationType,
     setIsCreateModalOpen,
     setSelectedTask,
     setIsSolveModalOpen,
@@ -27,12 +33,33 @@ export const MarketplaceView: React.FC = () => {
     'Data Labeling',
   ];
 
+  const submissionTypes = [
+    { label: 'All Submissions', value: 'All' },
+    { label: 'Text', value: 'text' },
+    { label: 'Multiple Choice', value: 'multiple_choice' },
+    { label: 'Rating', value: 'rating' },
+    { label: 'Image', value: 'image' },
+    { label: 'GPS / Location', value: 'gps' },
+    { label: 'Screen Recording', value: 'screen_recording' },
+  ];
+
+  const verificationTypes = [
+    { label: 'All Pipelines', value: 'All' },
+    { label: 'AI Verification', value: 'AI Verification' },
+    { label: 'Human Review', value: 'Human Review' },
+    { label: 'AI First', value: 'AI First' },
+    { label: 'Consensus', value: 'Consensus' },
+    { label: 'Hybrid', value: 'Hybrid' },
+  ];
+
   const filteredTasks = tasks.filter((t) => {
     const matchesCategory = selectedCategory === 'All' || t.category === selectedCategory;
+    const matchesSubmission = selectedSubmissionType === 'All' || t.submissionType === selectedSubmissionType;
+    const matchesVerification = selectedVerificationType === 'All' || t.verificationType === selectedVerificationType;
     const matchesSearch =
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesSubmission && matchesVerification && matchesSearch;
   });
 
   const handleOpenSolve = (task: TaskItem) => {
@@ -53,55 +80,88 @@ export const MarketplaceView: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="relative z-10 max-w-7xl mx-auto">
-        {/* Top Header & Search Bar */}
+        {/* Top Header & Action */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10"
+          className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8"
         >
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs font-mono text-[#836EF9] uppercase font-semibold tracking-widest">
-                Live Monad Swarm Grid
+                Real-Time Task Exchange
               </span>
             </div>
             <h1 className="font-heading italic text-4xl sm:text-6xl text-white tracking-tight leading-tight">
-              Human Intelligence <span className="text-white/70">Marketplace</span>
+              Swarm Intelligence <span className="text-white/70">Marketplace</span>
             </h1>
           </div>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="liquid-glass-strong rounded-full px-6 py-3.5 text-xs font-semibold text-white hover:bg-white/10 transition-all flex items-center gap-2 shadow-2xl border border-white/20 self-start md:self-auto group"
+            className="liquid-glass rounded-full px-6 py-3.5 text-xs font-semibold text-white hover:bg-white/10 transition-all flex items-center gap-2 shadow-2xl border border-white/20 self-start md:self-auto group"
           >
             <Plus className="w-4 h-4 text-[#836EF9] group-hover:scale-110 transition-transform" />
-            <span>Publish Microtask (AI)</span>
+            <span>Publish Task (AI Prompt)</span>
           </button>
         </motion.div>
 
-        {/* Search & Category Filter Row */}
+        {/* Filter Controls Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.15 }}
-          className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-10"
+          className="space-y-4 mb-10"
         >
-          {/* Search Bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tasks by prompt, code, category..."
-              className="w-full liquid-glass border border-white/10 rounded-full pl-11 pr-4 py-3 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#836EF9] transition-all backdrop-blur-xl"
-            />
+          {/* Search Bar & Dropdown Selects */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative md:col-span-2">
+              <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search tasks by prompt, category, verification type..."
+                className="w-full liquid-glass border border-white/10 rounded-2xl pl-11 pr-4 py-3 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#836EF9] transition-all backdrop-blur-xl"
+              />
+            </div>
+
+            {/* Submission Type Dropdown */}
+            <div>
+              <select
+                value={selectedSubmissionType}
+                onChange={(e) => setSelectedSubmissionType(e.target.value)}
+                className="w-full liquid-glass border border-white/10 rounded-2xl px-4 py-3 text-xs text-white bg-black focus:outline-none focus:border-[#836EF9]"
+              >
+                {submissionTypes.map((st) => (
+                  <option key={st.value} value={st.value} className="bg-black text-white">
+                    {st.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Verification Pipeline Dropdown */}
+            <div>
+              <select
+                value={selectedVerificationType}
+                onChange={(e) => setSelectedVerificationType(e.target.value)}
+                className="w-full liquid-glass border border-white/10 rounded-2xl px-4 py-3 text-xs text-white bg-black focus:outline-none focus:border-[#836EF9]"
+              >
+                {verificationTypes.map((vt) => (
+                  <option key={vt.value} value={vt.value} className="bg-black text-white">
+                    {vt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          {/* Category Pills */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 no-scrollbar">
+          {/* Category Horizontal Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <Filter className="w-3.5 h-3.5 text-white/40 shrink-0" />
             {categories.map((cat) => (
               <button
                 key={cat}
@@ -118,7 +178,7 @@ export const MarketplaceView: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Task Grid */}
+        {/* Dense Information Task Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTasks.map((task, idx) => (
             <motion.div
@@ -129,11 +189,14 @@ export const MarketplaceView: React.FC = () => {
               className="liquid-glass rounded-3xl p-6 border border-white/10 hover:border-white/30 transition-all hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden backdrop-blur-xl bg-black/40"
             >
               <div>
-                {/* Card Top Row */}
-                <div className="flex items-center justify-between gap-2 mb-4">
-                  <span className="text-[10px] font-mono uppercase px-3 py-1 rounded-full bg-white/5 text-white/70 border border-white/10">
-                    {task.category}
-                  </span>
+                {/* Card Header Tags */}
+                <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-white/5 text-white/70 border border-white/10">
+                      {task.category}
+                    </span>
+                    <VerificationBadge type={task.verificationType} />
+                  </div>
 
                   <div className="flex items-center gap-1 text-xs font-mono text-[#836EF9] font-bold bg-[#836EF9]/10 px-3 py-1 rounded-full border border-[#836EF9]/20">
                     <Zap className="w-3.5 h-3.5" />
@@ -145,40 +208,36 @@ export const MarketplaceView: React.FC = () => {
                 <h3 className="font-heading italic text-xl text-white group-hover:text-[#836EF9] transition-colors mb-2 line-clamp-2 leading-snug">
                   {task.title}
                 </h3>
-                <p className="text-xs text-white/60 leading-relaxed font-light line-clamp-3 mb-6">
+                <p className="text-xs text-white/60 leading-relaxed font-light line-clamp-3 mb-4">
                   {task.description}
                 </p>
               </div>
 
-              <div>
-                {/* Stats Bar */}
-                <div className="pt-4 border-t border-white/5 flex items-center justify-between text-xs font-mono text-white/50 mb-4">
+              <div className="space-y-4">
+                {/* Progress Bar */}
+                <ProgressIndicator
+                  joined={task.workersJoined}
+                  required={task.workersRequired}
+                />
+
+                {/* Footer Metadata */}
+                <div className="pt-3 border-t border-white/5 flex items-center justify-between text-xs font-mono text-white/50">
                   <div className="flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-emerald-400" />
                     <span>{task.duration}</span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>
-                      {task.workersJoined}/{task.workersRequired} Workers
-                    </span>
-                  </div>
-
-                  {task.aiVerified && (
-                    <div className="flex items-center gap-1 text-emerald-400" title="AI Verified Task">
-                      <ShieldCheck className="w-3.5 h-3.5" />
-                      <span className="text-[10px]">AI Audit</span>
-                    </div>
-                  )}
+                  <span className="text-[10px] text-white/40 uppercase">
+                    Type: {task.submissionType}
+                  </span>
                 </div>
 
-                {/* Accept Task Action Button */}
+                {/* Accept Action Button */}
                 <button
                   onClick={() => handleOpenSolve(task)}
                   className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white text-white hover:text-black font-semibold text-xs transition-all border border-white/10 flex items-center justify-center gap-2 group-hover:border-white/30 shadow-lg"
                 >
-                  <span>Accept & Solve Task</span>
+                  <span>Accept & Submit Task</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -188,7 +247,7 @@ export const MarketplaceView: React.FC = () => {
 
         {filteredTasks.length === 0 && (
           <div className="text-center py-20 text-white/40 font-mono text-xs">
-            No tasks found matching your search filter.
+            No active swarm tasks match your current filter parameters.
           </div>
         )}
       </div>

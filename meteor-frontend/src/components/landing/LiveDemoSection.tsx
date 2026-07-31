@@ -48,7 +48,7 @@ export const LiveDemoSection: React.FC = () => {
       category: 'AI Verification',
       difficulty: 'Medium',
       creator: '0x000...Demo',
-      aiVerified: true,
+      verificationType: 'AI Verification',
     });
 
     setIsSimulating(false);

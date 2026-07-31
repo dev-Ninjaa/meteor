@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { TaskItem, TransactionItem, INITIAL_TASKS, INITIAL_TRANSACTIONS } from '../data/mockData';
+import { TaskItem, TransactionItem, INITIAL_TASKS, INITIAL_TRANSACTIONS, SubmissionType, VerificationType } from '../data/mockData';
 import confetti from 'canvas-confetti';
 
 export type AppTab = 'landing' | 'marketplace' | 'dashboard' | 'wallet' | 'profile';
@@ -15,6 +15,10 @@ interface AppState {
   setSearchQuery: (query: string) => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
+  selectedSubmissionType: string;
+  setSelectedSubmissionType: (type: string) => void;
+  selectedVerificationType: string;
+  setSelectedVerificationType: (type: string) => void;
 
   // Selected Task / Modals
   selectedTask: TaskItem | null;
@@ -35,8 +39,8 @@ interface AppState {
   transactions: TransactionItem[];
 
   // Actions
-  createTask: (newTask: Omit<TaskItem, 'id' | 'createdAt' | 'status' | 'workersJoined'>) => TaskItem;
-  acceptAndCompleteTask: (taskId: string, submissionText: string) => Promise<boolean>;
+  createTask: (newTask: Partial<TaskItem>) => TaskItem;
+  acceptAndCompleteTask: (taskId: string, submissionData: any) => Promise<boolean>;
 
   // Toast / Notifications
   toasts: { id: string; title: string; message: string; type: 'success' | 'info' | 'monad' }[];
@@ -56,6 +60,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSearchQuery: (query) => set({ searchQuery: query }),
   selectedCategory: 'All',
   setSelectedCategory: (cat) => set({ selectedCategory: cat }),
+  selectedSubmissionType: 'All',
+  setSelectedSubmissionType: (type) => set({ selectedSubmissionType: type }),
+  selectedVerificationType: 'All',
+  setSelectedVerificationType: (type) => set({ selectedVerificationType: type }),
 
   selectedTask: null,
   setSelectedTask: (task) => set({ selectedTask: task }),
@@ -81,19 +89,35 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   createTask: (newTaskData) => {
     const id = `task-${Date.now().toString().slice(-4)}`;
+    const rewardNum = newTaskData.rewardNum || 35.0;
     const newTask: TaskItem = {
-      ...newTaskData,
       id,
-      createdAt: 'Just now',
-      status: 'OPEN',
+      title: newTaskData.title || 'Untitled Microtask',
+      description: newTaskData.description || '',
+      instructions: newTaskData.instructions || 'Follow verification guidelines.',
+      requirements: newTaskData.requirements || 'Standard quality output',
+      reward: `${rewardNum.toFixed(1)} MON`,
+      rewardNum,
+      duration: newTaskData.duration || '10 mins',
+      workersRequired: newTaskData.workersRequired || 5,
       workersJoined: 0,
+      workersCompleted: 0,
+      category: newTaskData.category || 'AI Verification',
+      difficulty: newTaskData.difficulty || 'Medium',
+      creator: '0x71C...9B41 (You)',
+      status: 'PUBLISHED',
+      submissionType: newTaskData.submissionType || 'text',
+      verificationType: newTaskData.verificationType || 'AI Verification',
+      options: newTaskData.options || [],
+      createdAt: 'Just now',
     };
 
     const newTx: TransactionItem = {
       id: `tx-${Date.now().toString().slice(-4)}`,
       txHash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
       type: 'Task Escrow',
-      amount: `-${newTaskData.reward}`,
+      amount: `-${newTask.reward}`,
+      taskTitle: newTask.title,
       status: 'CONFIRMED',
       timestamp: 'Just now',
       taskId: id,
@@ -102,21 +126,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => ({
       tasks: [newTask, ...state.tasks],
       transactions: [newTx, ...state.transactions],
-      monBalance: Math.max(0, state.monBalance - newTaskData.rewardNum),
+      monBalance: Math.max(0, state.monBalance - rewardNum),
     }));
 
-    get().addToast('Task Escrowed on Monad', `Created "${newTaskData.title}" — ${newTaskData.reward} locked in smart contract`, 'monad');
+    get().addToast('Task Published & Escrowed', `Created "${newTask.title}" — ${newTask.reward} locked on Monad`, 'monad');
     return newTask;
   },
 
-  acceptAndCompleteTask: async (taskId, _submissionText) => {
+  acceptAndCompleteTask: async (taskId, submissionData) => {
     const task = get().tasks.find((t) => t.id === taskId);
     if (!task) return false;
 
-    // Simulate AI verification latency
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Confetti effect
+    // Trigger celebratory confetti
     confetti({
       particleCount: 80,
       spread: 70,
@@ -129,27 +150,37 @@ export const useAppStore = create<AppState>((set, get) => ({
       txHash: `0x${Math.random().toString(16).substring(2, 10)}...${Math.random().toString(16).substring(2, 6)}`,
       type: 'Task Reward',
       amount: `+${task.reward}`,
+      taskTitle: task.title,
       status: 'CONFIRMED',
       timestamp: 'Just now',
       taskId: task.id,
     };
 
     set((state) => ({
-      tasks: state.tasks.map((t) =>
-        t.id === taskId
-          ? {
-              ...t,
-              workersJoined: Math.min(t.workersJoined + 1, t.workersRequired),
-              workersCompleted: (t.workersJoined + 1),
-              status: t.workersJoined + 1 >= t.workersRequired ? 'COMPLETED' : 'IN_PROGRESS',
-            }
-          : t
-      ),
+      tasks: state.tasks.map((t) => {
+        if (t.id === taskId) {
+          const newJoined = Math.min(t.workersJoined + 1, t.workersRequired);
+          const newCompleted = Math.min(t.workersCompleted + 1, t.workersRequired);
+          const newStatus = newCompleted >= t.workersRequired ? 'COMPLETED' : 'VERIFIED';
+          return {
+            ...t,
+            workersJoined: newJoined,
+            workersCompleted: newCompleted,
+            status: newStatus,
+            userSubmission: submissionData,
+          };
+        }
+        return t;
+      }),
       transactions: [newTx, ...state.transactions],
       monBalance: state.monBalance + task.rewardNum,
     }));
 
-    get().addToast('Task Solved & Verified!', `AI Verified 100%. Released ${task.reward} instantly to your wallet.`, 'success');
+    get().addToast(
+      'Task Solved & Verified!',
+      `${task.verificationType} confirmed. Released ${task.reward} to your wallet.`,
+      'success'
+    );
     return true;
   },
 
