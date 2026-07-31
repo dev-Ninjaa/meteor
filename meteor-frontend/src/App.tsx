@@ -4,6 +4,9 @@ import { Navbar } from './components/layout/Navbar';
 import { Toasts } from './components/layout/Toasts';
 import { HeroSection } from './components/landing/HeroSection';
 import { CapabilitiesSection } from './components/landing/CapabilitiesSection';
+import { VisionSection } from './components/landing/VisionSection';
+import { HowItWorksSection } from './components/landing/HowItWorksSection';
+import { WhyNowSection } from './components/landing/WhyNowSection';
 import { OpenSourceSection } from './components/landing/OpenSourceSection';
 
 import { MarketplaceView } from './features/marketplace/MarketplaceView';
@@ -28,6 +31,9 @@ export const App: React.FC = () => {
           <>
             <HeroSection />
             <CapabilitiesSection />
+            <VisionSection />
+            <HowItWorksSection />
+            <WhyNowSection />
             <OpenSourceSection />
           </>
         )}

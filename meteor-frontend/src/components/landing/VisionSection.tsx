@@ -1,77 +1,90 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BlurText } from '../shared/BlurText';
-import { Network, Bot, Building2, Cloud, Code2 } from 'lucide-react';
+import { Brain, Sparkles, MapPin, Cpu } from 'lucide-react';
+
+const HIGHLIGHT_CARDS = [
+  {
+    icon: Brain,
+    title: 'Human Judgment',
+    desc: "When AI isn't confident, humans make the final decision.",
+    color: 'text-[#836EF9]',
+  },
+  {
+    icon: Sparkles,
+    title: 'Human Creativity',
+    desc: 'Inject emotional resonance, cultural humor, and authentic taste.',
+    color: 'text-amber-400',
+  },
+  {
+    icon: MapPin,
+    title: 'Local Intelligence',
+    desc: 'Verify physical-world facts and real-life events on the ground.',
+    color: 'text-emerald-400',
+  },
+  {
+    icon: Cpu,
+    title: 'AI + Human Collaboration',
+    desc: 'AI dispatches microtasks to a global swarm in real time.',
+    color: 'text-indigo-400',
+  },
+];
 
 export const VisionSection: React.FC = () => {
-  const visions = [
-    {
-      title: 'Human API',
-      desc: 'Query human perception, creativity, and localized knowledge through a standardized REST & GraphQL endpoint.',
-      icon: Network,
-    },
-    {
-      title: 'Agent Economy',
-      desc: 'Autonomous AI agents hiring humans to solve captchas, verify real-world facts, and audit high-stakes decisions.',
-      icon: Bot,
-    },
-    {
-      title: 'Autonomous Organizations',
-      desc: 'DAOs operating at machine speed with instant micro-contract execution and zero administrative overhead.',
-      icon: Building2,
-    },
-    {
-      title: 'Human Compute Cloud',
-      desc: 'Elastic scaling of human intelligence nodes available 24/7 across every timezone and language globally.',
-      icon: Cloud,
-    },
-    {
-      title: 'Programmable Work',
-      desc: 'Replacing rigid 9-to-5 employment contracts with granular, liquid micro-contributions settled in real-time.',
-      icon: Code2,
-    },
-  ];
-
   return (
-    <section className="relative py-28 px-6 bg-[#09090B] border-t border-white/5">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16 max-w-3xl mx-auto">
-          <div className="text-xs font-mono uppercase tracking-widest text-[#836EF9] mb-3">
-            Section 09 // Long Term Vision
+    <section className="relative py-28 px-6 md:px-16 lg:px-20 bg-black overflow-hidden border-t border-white/10">
+      <div className="max-w-7xl mx-auto relative z-10">
+        {/* Label & Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="max-w-4xl mb-16"
+        >
+          <div className="text-xs font-mono uppercase tracking-widest text-[#836EF9] mb-4 flex items-center gap-2 font-semibold">
+            <span className="w-2 h-2 rounded-full bg-[#836EF9] animate-pulse" /> // Vision
           </div>
-          <BlurText
-            text="The Future of Autonomous Work"
-            className="font-heading italic text-4xl sm:text-6xl text-white tracking-tight leading-tight"
-          />
-          <p className="text-sm sm:text-base text-white/60 mt-4 max-w-xl mx-auto">
-            Building the foundation where software and human intellect merge into a seamless global computing grid.
-          </p>
-        </div>
+          <h2 className="font-heading italic text-white text-4xl sm:text-6xl md:text-7xl leading-[1.0] tracking-tight mb-8">
+            The Future of Work Isn't Jobs. <br className="hidden sm:inline" />
+            <span className="text-white/80">It's Tasks.</span>
+          </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {visions.map((v, idx) => {
-            const Icon = v.icon;
+          <div className="space-y-4 text-white/70 text-base md:text-lg font-light leading-relaxed max-w-3xl">
+            <p>
+              AI is automating execution, but humans remain irreplaceable for judgment, creativity, local knowledge, trust, and real-world verification.
+            </p>
+            <p>
+              We're building the missing layer between AI and people—a marketplace where humans and AI agents collaborate through programmable microtasks.
+            </p>
+            <p className="text-white font-normal">
+              Instead of hiring someone for hours, you request seconds of intelligence.
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Bottom Highlight (4 Horizontal Cards) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {HIGHLIGHT_CARDS.map((card, idx) => {
+            const Icon = card.icon;
             return (
               <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
+                key={card.title}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className={`p-6 rounded-3xl liquid-glass border border-white/10 flex flex-col justify-between hover:border-[#836EF9]/40 transition-all ${
-                  idx === 0 ? 'md:col-span-2' : ''
-                }`}
+                transition={{ duration: 0.5, delay: idx * 0.1 }}
+                className="liquid-glass rounded-2xl p-6 flex flex-col justify-between border border-white/10 hover:border-white/20 transition-all hover:-translate-y-1"
               >
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#836EF9] mb-4">
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-heading italic text-3xl text-white mb-2">{v.title}</h3>
-                  <p className="text-xs sm:text-sm text-white/70 font-light leading-relaxed">{v.desc}</p>
+                <div className="w-10 h-10 rounded-xl liquid-glass flex items-center justify-center mb-6 border border-white/10">
+                  <Icon className={`w-5 h-5 ${card.color}`} />
                 </div>
-
-                <div className="mt-6 pt-4 border-t border-white/5 text-[11px] font-mono text-white/40">
-                  // METEOR_PROTOCOL_MODULE_{idx + 1}
+                <div>
+                  <h3 className="font-heading italic text-white text-2xl tracking-tight leading-tight mb-2">
+                    {card.title}
+                  </h3>
+                  <p className="text-xs text-white/70 font-light leading-relaxed">
+                    {card.desc}
+                  </p>
                 </div>
               </motion.div>
             );
