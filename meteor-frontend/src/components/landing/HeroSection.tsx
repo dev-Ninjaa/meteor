@@ -10,7 +10,7 @@ export const HeroSection: React.FC = () => {
   const { setActiveTab } = useAppStore();
 
   return (
-    <section className="relative min-h-screen w-full bg-black overflow-hidden flex flex-col items-center justify-center text-center pt-24 pb-12 px-6">
+    <section className="relative min-h-screen w-full bg-black overflow-hidden flex flex-col items-center justify-start text-center pt-32 sm:pt-36 pb-12 px-6">
       {/* Background Video with custom JS crossfade */}
       <FadingVideo
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260328_115001_bcdaa3b4-03de-47e7-ad63-ae3e392c32d4.mp4"
@@ -21,7 +21,7 @@ export const HeroSection: React.FC = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/30 to-black z-0 pointer-events-none" />
 
       {/* Hero Main Content */}
-      <div className="relative z-10 flex flex-col items-center justify-center max-w-5xl mx-auto py-8">
+      <div className="relative z-10 flex flex-col items-center justify-start max-w-5xl mx-auto py-2">
         {/* Hero Heading with Instrument Serif */}
         <div className="mb-6">
           <BlurText
