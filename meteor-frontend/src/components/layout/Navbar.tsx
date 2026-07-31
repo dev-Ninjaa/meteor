@@ -128,17 +128,6 @@ export const Navbar: React.FC = () => {
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           )}
-
-          {/* App Page Action: Back to Landing */}
-          {activeTab !== 'landing' && (
-            <button
-              onClick={() => setActiveTab('landing')}
-              className="liquid-glass rounded-full px-3.5 py-1.5 text-xs font-medium text-white/80 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-1.5 border border-white/10"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Landing Page</span>
-            </button>
-          )}
         </div>
       </nav>
     </header>

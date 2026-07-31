@@ -23,14 +23,14 @@ export const ProfileView: React.FC = () => {
 
   return (
     <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 overflow-hidden">
-      {/* Background Video (full bleed) with smooth crossfade */}
+      {/* Background Video (full bleed) with custom JS crossfade */}
       <FadingVideo
         src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260307_083826_e938b29f-a43a-41ec-a153-3d4730578ab8.mp4"
-        className="fixed inset-0 w-full h-full object-cover z-0 opacity-40 pointer-events-none"
+        className="fixed inset-0 w-full h-full object-cover z-0 opacity-20 filter blur-md scale-105 pointer-events-none"
       />
 
-      {/* Dark Vignette Overlay */}
-      <div className="fixed inset-0 bg-gradient-to-b from-black/80 via-black/40 to-black z-0 pointer-events-none" />
+      {/* Heavy Dark Overlay & Blur */}
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-2xl z-0 pointer-events-none" />
 
       {/* Main Content Area */}
       <div className="relative z-10 max-w-5xl mx-auto">
