@@ -1,0 +1,13 @@
+{
+  "name": "@meteor-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Meteor smart contracts (Foundry)",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "deploy": "./deploy.sh",
+    "clean": "forge clean"
+  },
+  "devDependencies": {}
+}

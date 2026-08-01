@@ -1,5 +1,5 @@
 {
-  "name": "meteor-frontend",
+  "name": "@meteor-frontend",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -8,11 +8,14 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext ts,tsx",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "abi:generate": "cat ../meteor-contracts/out/BountyEscrow.sol/BountyEscrow.json | jq '.abi' > src/lib/bounty-escrow.abi.json",
+    "wagmi:generate": "wagmi generate"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-devtools": "^5.101.4",
+    "@wagmi/cli": "^2.10.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "framer-motion": "^12.43.0",

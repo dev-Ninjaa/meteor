@@ -1,0 +1,38 @@
+{
+  "name": "meteor",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "meteor-backend",
+    "meteor-frontend",
+    "meteor-contracts"
+  ],
+  "scripts": {
+    "dev:backend": "bun run --cwd meteor-backend start:dev",
+    "dev:frontend": "bun run --cwd meteor-frontend dev",
+    "build": "bun run --cwd meteor-backend build && bun run --cwd meteor-frontend build",
+    "build:backend": "bun run --cwd meteor-backend build",
+    "build:frontend": "bun run --cwd meteor-frontend build",
+    "lint": "bun run --cwd meteor-backend lint && bun run --cwd meteor-frontend lint",
+    "typecheck": "bun run --cwd meteor-backend typecheck && bun run --cwd meteor-frontend typecheck",
+    "test": "bun run --cwd meteor-backend test",
+    "db:generate": "bun run --cwd meteor-backend prisma:generate",
+    "db:push": "bun run --cwd meteor-backend prisma:push",
+    "db:migrate": "bun run --cwd meteor-backend prisma:migrate",
+    "db:studio": "bun run --cwd meteor-backend prisma:studio",
+    "contracts:build": "cd meteor-contracts && forge build",
+    "contracts:test": "cd meteor-contracts && forge test",
+    "contracts:deploy": "cd meteor-contracts && ./deploy.sh",
+    "contracts:abi": "cd meteor-contracts && cat out/BountyEscrow.sol/BountyEscrow.json | jq '.abi' > ../meteor-frontend/src/lib/bounty-escrow.abi.json",
+    "abi:generate": "cd meteor-frontend && node -e \"const fs=require('fs'); const data=JSON.parse(fs.readFileSync('../meteor-contracts/out/BountyEscrow.sol/BountyEscrow.json','utf8')); fs.writeFileSync('src/lib/bounty-escrow.abi.json', JSON.stringify(data.abi))\"",
+    "wagmi:generate": "cd meteor-frontend && bunx wagmi generate",
+    "docker:up": "docker compose -f meteor-backend/docker-compose.yml up -d",
+    "docker:down": "docker compose -f meteor-backend/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  },
+  "packageManager": "bun@1.3.5"
+}

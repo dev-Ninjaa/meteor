@@ -1,5 +1,5 @@
 {
-  "name": "meteor",
+  "name": "@meteor-backend",
   "version": "0.1.0",
   "description": "Meteor - Real-time bounty marketplace with AI assistance and Monad escrow payments",
   "private": true,
