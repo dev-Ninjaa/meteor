@@ -81,20 +81,28 @@ export class SubmissionsService {
         data: { workersCompleted: { increment: 1 } },
       });
 
-      await this.notificationsService.createNotification({
-        senderId: workerId,
-        receiverId: task.createdById,
-        type: NotificationType.SUBMISSION_RECEIVED,
-        title: 'Submission Received',
-        message: `A submission has been received for your task "${task.title}".`,
-        metadata: { taskId, submissionId: submission.id, workerId },
-      });
+      try {
+        await this.notificationsService.createNotification({
+          senderId: workerId,
+          receiverId: task.createdById,
+          type: NotificationType.SUBMISSION_RECEIVED,
+          title: 'Submission Received',
+          message: `A submission has been received for your task "${task.title}".`,
+          metadata: { taskId, submissionId: submission.id, workerId },
+        });
+      } catch (error) {
+        this.logger.error(`Failed to create notification: ${error.message}`, error.stack);
+      }
 
-      this.eventEmitter.emit('submission.created', {
-        taskId,
-        submissionId: submission.id,
-        workerId,
-      });
+      try {
+        this.eventEmitter.emit('submission.created', {
+          taskId,
+          submissionId: submission.id,
+          workerId,
+        });
+      } catch (error) {
+        this.logger.error(`Failed to emit event: ${error.message}`, error.stack);
+      }
 
       this.logger.log(
         `Submission created: ${submission.id} for task ${taskId} by worker ${workerId}`,

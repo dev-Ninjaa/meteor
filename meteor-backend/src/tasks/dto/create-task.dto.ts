@@ -8,6 +8,7 @@ import {
   Min,
   ArrayMinSize,
   Length,
+  IsDateString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -36,6 +37,14 @@ export class CreateTaskDto {
   @IsString()
   @IsOptional()
   tokenAddress?: string;
+
+  @ApiPropertyOptional({
+    description: 'Task deadline (ISO 8601 format)',
+    example: '2026-08-15T23:59:59.000Z',
+  })
+  @IsDateString()
+  @IsOptional()
+  deadline?: string;
 
   @ApiProperty({ description: 'Task tags', example: ['frontend', 'react', 'tailwind'] })
   @IsArray()

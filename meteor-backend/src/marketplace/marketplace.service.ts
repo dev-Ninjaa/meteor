@@ -83,23 +83,39 @@ export class MarketplaceService {
       orderBy = { workersJoined: 'desc' };
     }
 
-    const [data, total] = await Promise.all([
-      this.prisma.task.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy,
-      }),
-      this.prisma.task.count({ where }),
-    ]);
+    try {
+      const [data, total] = await Promise.all([
+        this.prisma.task.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy,
+        }),
+        this.prisma.task.count({ where }),
+      ]);
 
-    return {
-      data: data.map(this.mapTaskResponse),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    };
+      return {
+        data: data.map((task) => this.mapTaskResponse(task)),
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      this.logger.error(
+        `Marketplace listing failed, returning empty page: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+
+      return {
+        data: [],
+        total: 0,
+        page,
+        limit,
+        totalPages: 0,
+      };
+    }
   }
 
   async search(query: QueryMarketplaceDto & { search: string }): Promise<{
@@ -113,24 +129,33 @@ export class MarketplaceService {
   }
 
   async getTags(): Promise<string[]> {
-    const tasks = await this.prisma.task.findMany({
-      where: {
-        status: 'OPEN',
-        deletedAt: null,
-      },
-      select: {
-        tags: true,
-      },
-    });
+    try {
+      const tasks = await this.prisma.task.findMany({
+        where: {
+          status: 'OPEN',
+          deletedAt: null,
+        },
+        select: {
+          tags: true,
+        },
+      });
 
-    const tagSet = new Set<string>();
-    for (const task of tasks) {
-      for (const tag of task.tags) {
-        tagSet.add(tag);
+      const tagSet = new Set<string>();
+      for (const task of tasks) {
+        for (const tag of task.tags) {
+          tagSet.add(tag);
+        }
       }
-    }
 
-    return Array.from(tagSet).sort();
+      return Array.from(tagSet).sort();
+    } catch (error) {
+      this.logger.error(
+        `Marketplace tag lookup failed, returning empty list: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return [];
+    }
   }
 
   private mapTaskResponse(task: {
