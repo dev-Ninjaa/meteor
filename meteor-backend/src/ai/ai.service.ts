@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { buildVerificationPrompt } from './prompts/verification.prompt';
 
+const SUPPORTED_GEMINI_MODELS = ['gemini-3.6-flash'] as const;
+
 export interface AiVerificationResult {
   passed: boolean;
   score: number;
@@ -26,10 +28,49 @@ export class AiService {
   private readonly genAi: GoogleGenerativeAI | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('gemini.apiKey');
+    const apiKey = this.configService.get<string>('gemini.apiKey') || process.env.GEMINI_API_KEY || '';
     if (apiKey) {
       this.genAi = new GoogleGenerativeAI(apiKey);
     }
+  }
+
+  private resolveModelNames(): string[] {
+    const configuredValue =
+      this.configService.get<string>('gemini.model') || process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+
+    const candidates = configuredValue
+      .split(/\s*\|\|\s*|\s*,\s*/)
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+
+    const validModels = candidates.filter((model): model is (typeof SUPPORTED_GEMINI_MODELS)[number] =>
+      SUPPORTED_GEMINI_MODELS.includes(model as (typeof SUPPORTED_GEMINI_MODELS)[number]),
+    );
+
+    return validModels.length > 0 ? validModels : ['gemini-3.6-flash'];
+  }
+
+  private async generateWithModel(prompt: string): Promise<string> {
+    if (!this.genAi) {
+      throw new Error('Gemini client is not configured');
+    }
+
+    const modelNames = this.resolveModelNames();
+    const failures: string[] = [];
+
+    for (const modelName of modelNames) {
+      try {
+        const model = this.genAi.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        failures.push(`${modelName}: ${message}`);
+        this.logger.warn(`Gemini model ${modelName} failed`, error);
+      }
+    }
+
+    throw new Error(`Unable to generate content with the configured Gemini models. ${failures.join(' | ')}`);
   }
 
   async verifySubmission(params: {
@@ -51,10 +92,7 @@ export class AiService {
     }
 
     try {
-      const model = this.genAi.getGenerativeModel({ model: 'gemini-pro' });
-      const result = await model.generateContent(prompt);
-      const response = result.response.text();
-
+      const response = await this.generateWithModel(prompt);
       return this.parseVerificationResponse(response);
     } catch (error) {
       this.logger.error('AI verification failed, falling back to mock', error);
@@ -73,11 +111,8 @@ export class AiService {
     }
 
     try {
-      const model = this.genAi.getGenerativeModel({ model: 'gemini-pro' });
       const prompt = this.buildTaskGenerationPrompt(dto);
-      const result = await model.generateContent(prompt);
-      const response = result.response.text();
-
+      const response = await this.generateWithModel(prompt);
       return this.parseTaskResponse(response);
     } catch (error) {
       this.logger.error('AI task generation failed, falling back to mock', error);
