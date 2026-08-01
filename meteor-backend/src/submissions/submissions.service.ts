@@ -90,8 +90,8 @@ export class SubmissionsService {
           message: `A submission has been received for your task "${task.title}".`,
           metadata: { taskId, submissionId: submission.id, workerId },
         });
-      } catch (error) {
-        this.logger.error(`Failed to create notification: ${error.message}`, error.stack);
+      } catch (error: unknown) {
+        this.logger.error(`Failed to create notification: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
       }
 
       try {
@@ -100,8 +100,8 @@ export class SubmissionsService {
           submissionId: submission.id,
           workerId,
         });
-      } catch (error) {
-        this.logger.error(`Failed to emit event: ${error.message}`, error.stack);
+      } catch (error: unknown) {
+        this.logger.error(`Failed to emit event: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
       }
 
       this.logger.log(
@@ -207,40 +207,48 @@ export class SubmissionsService {
         ? `Your submission for task "${task.title}" has been approved.`
         : `Your submission for task "${task.title}" has been rejected.`;
 
-    await this.notificationsService.createNotification({
-      senderId: task.createdById,
-      receiverId: submission.workerId,
-      type: notifType,
-      title: notifTitle,
-      message: notifMessage,
-      metadata: { taskId: task.id, submissionId, verificationStatus },
-    });
+    try {
+            await this.notificationsService.createNotification({
+              senderId: task.createdById,
+              receiverId: submission.workerId,
+              type: notifType,
+              title: notifTitle,
+              message: notifMessage,
+              metadata: { taskId: task.id, submissionId, verificationStatus },
+            });
+          } catch (error: unknown) {
+            this.logger.error(`Failed to create notification: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
+          }
 
-    await this.notificationsService.createNotification({
-      senderId: submission.workerId,
-      receiverId: task.createdById,
-      type: NotificationType.VERIFICATION_COMPLETED,
-      title: 'AI Verification Completed',
-      message: `AI verification has been completed for a submission on task "${task.title}".`,
-      metadata: { taskId: task.id, submissionId, verificationStatus, mode: 'AI' },
-    });
+          try {
+            await this.notificationsService.createNotification({
+              senderId: submission.workerId,
+              receiverId: task.createdById,
+              type: NotificationType.VERIFICATION_COMPLETED,
+              title: 'AI Verification Completed',
+              message: `AI verification has been completed for a submission on task "${task.title}".`,
+              metadata: { taskId: task.id, submissionId, verificationStatus, mode: 'AI' },
+            });
+          } catch (error: unknown) {
+            this.logger.error(`Failed to create notification: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
+          }
 
-    const eventName =
-      submissionStatus === 'APPROVED' ? 'submission.approved' : 'submission.rejected';
-    this.eventEmitter.emit(eventName, {
-      taskId: task.id,
-      submissionId,
-      workerId: submission.workerId,
-      status: submissionStatus,
-    });
+          const eventName =
+            submissionStatus === 'APPROVED' ? 'submission.approved' : 'submission.rejected';
+          this.eventEmitter.emit(eventName, {
+            taskId: task.id,
+            submissionId,
+            workerId: submission.workerId,
+            status: submissionStatus,
+          });
 
-    this.eventEmitter.emit('verification.completed', {
-      taskId: task.id,
-      submissionId,
-      workerId: submission.workerId,
-      status: verificationStatus,
-      mode: 'AI',
-    });
+          this.eventEmitter.emit('verification.completed', {
+            taskId: task.id,
+            submissionId,
+            workerId: submission.workerId,
+            status: verificationStatus,
+            mode: 'AI',
+          });
 
     this.logger.log(
       `AI verification for submission ${submissionId}: ${verificationStatus} (score: ${result.score})`,
@@ -332,23 +340,31 @@ export class SubmissionsService {
         ? `Your submission for task "${task.title}" has been approved.`
         : `Your submission for task "${task.title}" has been rejected.`;
 
-    await this.notificationsService.createNotification({
-      senderId: task.createdById,
-      receiverId: submission.workerId,
-      type: notifType,
-      title: notifTitle,
-      message: notifMessage,
-      metadata: { taskId: task.id, submissionId, verificationStatus },
-    });
+    try {
+      await this.notificationsService.createNotification({
+        senderId: task.createdById,
+        receiverId: submission.workerId,
+        type: notifType,
+        title: notifTitle,
+        message: notifMessage,
+        metadata: { taskId: task.id, submissionId, verificationStatus },
+      });
+    } catch (error: unknown) {
+      this.logger.error(`Failed to create notification: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
+    }
 
-    await this.notificationsService.createNotification({
-      senderId: verifierId,
-      receiverId: task.createdById,
-      type: NotificationType.VERIFICATION_COMPLETED,
-      title: 'Manual Verification Completed',
-      message: `Manual verification has been completed for a submission on task "${task.title}".`,
-      metadata: { taskId: task.id, submissionId, verificationStatus, mode: 'MANUAL' },
-    });
+    try {
+      await this.notificationsService.createNotification({
+        senderId: verifierId,
+        receiverId: task.createdById,
+        type: NotificationType.VERIFICATION_COMPLETED,
+        title: 'Manual Verification Completed',
+        message: `Manual verification has been completed for a submission on task "${task.title}".`,
+        metadata: { taskId: task.id, submissionId, verificationStatus, mode: 'MANUAL' },
+      });
+    } catch (error: unknown) {
+      this.logger.error(`Failed to create notification: ${error instanceof Error ? error.message : String(error)}`, error instanceof Error ? error.stack : undefined);
+    }
 
     const manualEventName =
       submissionStatus === 'APPROVED' ? 'submission.approved' : 'submission.rejected';
