@@ -1,0 +1,10 @@
+{
+  "  contractName:BountyEscrow": "",
+  "  address": "0xD06122a48bcAfe76E4eAA8CE8922b20a709AA26d",
+  "  chainId": "10143",
+  "  network": "monad-testnet",
+  "  deployer": "0x8bA9101741Fc6949b92e18AAE387b318A675A0aF",
+  "  timestamp": "1785496558",
+  "  blockNumber": "49657563",
+  "  source:src/BountyEscrow.sol": ""
+}

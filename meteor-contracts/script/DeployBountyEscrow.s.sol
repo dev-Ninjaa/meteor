@@ -18,11 +18,14 @@ contract DeployBountyEscrow is Script {
             revert("PRIVATE_KEY required");
         }
         
-        // Get deployer address from env or derive from private key
-        address deployer = vm.envAddress("DEPLOYER_ADDRESS");
-        if (deployer == address(0)) {
-            // Use a deterministic address for the private key
-            deployer = vm.addr(uint256(keccak256("deployer")));
+        // Get deployer address from env or use anvil default
+        address deployer;
+        string memory deployerEnv = vm.envString("DEPLOYER_ADDRESS");
+        if (bytes(deployerEnv).length > 0) {
+            deployer = vm.envAddress("DEPLOYER_ADDRESS");
+        } else {
+            // Use the anvil default account (first test account)
+            deployer = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
         }
         
         console.log("Deploying BountyEscrow...");
@@ -38,30 +41,17 @@ contract DeployBountyEscrow is Script {
         address contractAddress = address(escrow);
         console.log("BountyEscrow deployed to:", contractAddress);
         
-        // Save deployment info
-        string memory network = block.chainid == 10143 ? "monad-testnet" : 
-                               block.chainid == 31337 ? "local" : "unknown";
-        
-        string memory json = string(
-            abi.encodePacked(
-                '{"contractName":"BountyEscrow","address":"',
-                vm.toString(contractAddress),
-                '","chainId":',
-                vm.toString(block.chainid),
-                ',"network":"',
-                network,
-                '","deployer":"',
-                vm.toString(deployer),
-                '","timestamp":',
-                vm.toString(block.timestamp),
-                '","blockNumber":',
-                vm.toString(block.number),
-                '","source":"src/BountyEscrow.sol"}'
-            )
-        );
-        
-        vm.writeFile("deployment.json", json);
-        console.log("Deployment saved to deployment.json");
+        // Output deployment info for shell capture
+        console.log("=== DEPLOYMENT_INFO_START ===");
+        console.log("contractName:BountyEscrow");
+        console.log("address:", contractAddress);
+        console.log("chainId:", block.chainid);
+        console.log("network:", block.chainid == 10143 ? "monad-testnet" : block.chainid == 31337 ? "local" : "unknown");
+        console.log("deployer:", deployer);
+        console.log("timestamp:", block.timestamp);
+        console.log("blockNumber:", block.number);
+        console.log("source:src/BountyEscrow.sol");
+        console.log("=== DEPLOYMENT_INFO_END ===");
         
         return contractAddress;
     }
