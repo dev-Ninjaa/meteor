@@ -9,6 +9,17 @@ export interface AiVerificationResult {
   feedback: string;
 }
 
+export interface AiTaskSuggestion {
+  title: string;
+  description: string;
+  reward: string;
+  tags: string[];
+  workersRequired: number;
+  maxWorkers: number;
+  verificationMode: 'AI' | 'MANUAL' | 'BOTH';
+  category: string;
+}
+
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
@@ -53,6 +64,106 @@ export class AiService {
         feedback: 'AI verification unavailable, auto-approved as fallback',
       };
     }
+  }
+
+  async generateTask(dto: { prompt: string; category?: string }): Promise<AiTaskSuggestion> {
+    if (!this.genAi) {
+      this.logger.warn('Gemini API key not configured, returning mock task');
+      return this.getMockTask(dto.category);
+    }
+
+    try {
+      const model = this.genAi.getGenerativeModel({ model: 'gemini-pro' });
+      const prompt = this.buildTaskGenerationPrompt(dto);
+      const result = await model.generateContent(prompt);
+      const response = result.response.text();
+
+      return this.parseTaskResponse(response);
+    } catch (error) {
+      this.logger.error('AI task generation failed, falling back to mock', error);
+      return this.getMockTask(dto.category);
+    }
+  }
+
+  private buildTaskGenerationPrompt(dto: { prompt: string; category?: string }): string {
+    return `You are an AI that generates structured microtasks for a bounty platform.
+
+User request: "${dto.prompt}"
+${dto.category ? `Category hint: ${dto.category}` : ''}
+
+Generate a task in this exact JSON format (no extra text):
+{
+  "title": "string (max 100 chars)",
+  "description": "string (detailed, actionable)",
+  "reward": "string (e.g. '25.0' for 25 MON per worker)",
+  "tags": ["string", "string", "string"],
+  "workersRequired": number (1-10),
+  "maxWorkers": number (workersRequired-20),
+  "verificationMode": "AI" | "MANUAL" | "BOTH",
+  "category": "string"
+}
+
+Guidelines:
+- Reward: 10-500 MON per worker based on difficulty
+- workersRequired: how many workers need to complete the task
+- maxWorkers: maximum workers allowed to join
+- verificationMode: AI (auto-verify), MANUAL (creator verifies), BOTH
+- Tags: 3-5 relevant keywords`;
+  }
+
+  private parseTaskResponse(response: string): AiTaskSuggestion {
+    try {
+      const cleaned = response.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return {
+        title: parsed.title || 'Generated Task',
+        description: parsed.description || 'No description',
+        reward: parsed.reward || '25.0',
+        tags: parsed.tags || ['ai-generated'],
+        workersRequired: parsed.workersRequired || 1,
+        maxWorkers: parsed.maxWorkers || 3,
+        verificationMode: parsed.verificationMode || 'AI',
+        category: parsed.category || 'general',
+      };
+    } catch {
+      return this.getMockTask();
+    }
+  }
+
+  private getMockTask(category?: string): AiTaskSuggestion {
+    const tasks: Record<string, AiTaskSuggestion> = {
+      testing: {
+        title: 'Test Website for Bugs',
+        description: 'Review landing page and report 3+ bugs with screenshots',
+        reward: '25.0',
+        tags: ['testing', 'web', 'qa'],
+        workersRequired: 3,
+        maxWorkers: 5,
+        verificationMode: 'AI',
+        category: 'testing',
+      },
+      'code-review': {
+        title: 'Review Solidity Smart Contract',
+        description: 'Audit for reentrancy, overflow, and access control issues',
+        reward: '100.0',
+        tags: ['solidity', 'security', 'audit'],
+        workersRequired: 2,
+        maxWorkers: 3,
+        verificationMode: 'MANUAL',
+        category: 'code-review',
+      },
+      translation: {
+        title: 'Translate Landing Page to Japanese',
+        description: 'Translate hero section and features, maintain brand tone',
+        reward: '30.0',
+        tags: ['translation', 'japanese', 'localization'],
+        workersRequired: 2,
+        maxWorkers: 5,
+        verificationMode: 'AI',
+        category: 'translation',
+      },
+    };
+    return tasks[category || 'testing'] || tasks.testing;
   }
 
   private parseVerificationResponse(response: string): AiVerificationResult {

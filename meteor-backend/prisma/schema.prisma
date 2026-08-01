@@ -103,7 +103,7 @@ model Task {
   manualVerificationRequired Boolean @default(false) @map("manual_verification_required")
   escrowStatus    EscrowStatus @default(UNLOCKED) @map("escrow_status")
 
-  createdById String @map("created_by_id")
+  createdById String @map("created_by_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -121,8 +121,8 @@ model TaskWorker {
   id        String   @id @default(uuid()) @db.Uuid
   status    String   @default("JOINED")
 
-  taskId String @map("task_id")
-  userId String @map("user_id")
+  taskId String @map("task_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -150,8 +150,8 @@ model Submission {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  taskId   String @map("task_id")
-  workerId String @map("worker_id")
+  taskId   String @map("task_id") @db.Uuid
+  workerId String @map("worker_id") @db.Uuid
 
   task   Task          @relation(fields: [taskId], references: [id])
   worker User          @relation(fields: [workerId], references: [id])
@@ -171,8 +171,8 @@ model Transaction {
   status       TransactionStatus  @default(PENDING)
   type         String
 
-  taskId String @map("task_id")
-  userId String @map("user_id")
+  taskId String @map("task_id") @db.Uuid
+  userId String @map("user_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -191,8 +191,8 @@ model Verification {
   manualNotes String?            @map("manual_notes")
   isManual    Boolean            @default(false) @map("is_manual")
 
-  submissionId String  @unique @map("submission_id")
-  verifiedById String? @map("verified_by_id")
+  submissionId String  @unique @map("submission_id") @db.Uuid
+  verifiedById String? @map("verified_by_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -211,8 +211,8 @@ model Notification {
   read      Boolean  @default(false)
   metadata  Json?
 
-  senderId   String? @map("sender_id")
-  receiverId String  @map("receiver_id")
+  senderId   String? @map("sender_id") @db.Uuid
+  receiverId String  @map("receiver_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
 
