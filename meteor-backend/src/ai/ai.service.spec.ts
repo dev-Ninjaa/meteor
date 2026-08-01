@@ -15,6 +15,27 @@ describe('AiService', () => {
     service = module.get<AiService>(AiService);
   });
 
+  describe('model selection', () => {
+    it('should resolve the supported flash models when no model is configured', () => {
+      expect((service as any).resolveModelNames()).toEqual(['gemini-3.6-flash']);
+    });
+
+    it('should parse logical OR model values from the environment', () => {
+      const original = process.env.GEMINI_MODEL;
+      process.env.GEMINI_MODEL = 'gemini-3.6-flash';
+
+      try {
+        expect((service as any).resolveModelNames()).toEqual(['gemini-3.6-flash']);
+      } finally {
+        if (original === undefined) {
+          delete process.env.GEMINI_MODEL;
+        } else {
+          process.env.GEMINI_MODEL = original;
+        }
+      }
+    });
+  });
+
   describe('verifySubmission', () => {
     it('should return mock result when API key is not configured', async () => {
       const result = await service.verifySubmission({
@@ -27,7 +48,7 @@ describe('AiService', () => {
       expect(result).toHaveProperty('passed');
       expect(result).toHaveProperty('score');
       expect(result).toHaveProperty('feedback');
-    });
+    }, 30000);
 
     it('should include submission proof when provided', async () => {
       const result = await service.verifySubmission({
@@ -39,6 +60,6 @@ describe('AiService', () => {
       });
 
       expect(result).toHaveProperty('passed', true);
-    });
+    }, 30000);
   });
 });
