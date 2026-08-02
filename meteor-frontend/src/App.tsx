@@ -1,4 +1,5 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { useAppStore } from './store/useAppStore';
 import { Navbar } from './components/layout/Navbar';
 import { Toasts } from './components/layout/Toasts';
@@ -18,41 +19,67 @@ import { ProfileView } from './features/profile/ProfileView';
 import { CreateTaskModal } from './components/marketplace/CreateTaskModal';
 import { InteractiveSolverModal } from './components/marketplace/InteractiveSolverModal';
 
+// Landing page component
+const LandingPage: React.FC = () => (
+  <>
+    <HeroSection />
+    <CapabilitiesSection />
+    <VisionSection />
+    <HowItWorksSection />
+    <WhyNowSection />
+    <WhatCanYouAskSection />
+    <OpenSourceSection />
+  </>
+);
+
+// App layout with navbar - for /app/* routes
+const AppLayout: React.FC = () => (
+  <div className="min-h-screen bg-[#09090B] text-[#FAFAFA] font-body selection:bg-[#836EF9]/30 selection:text-white relative">
+    <Navbar />
+    <main className="w-full pt-20">
+      <Outlet />
+    </main>
+    <CreateTaskModal />
+    <InteractiveSolverModal />
+    <Toasts />
+  </div>
+);
+
+// Landing layout - no navbar wallet button
+const LandingLayout: React.FC = () => (
+  <div className="min-h-screen bg-[#09090B] text-[#FAFAFA] font-body selection:bg-[#836EF9]/30 selection:text-white relative">
+    <Navbar />
+    <main className="w-full">
+      <Outlet />
+    </main>
+    <Toasts />
+  </div>
+);
+
 export const App: React.FC = () => {
-  const { activeTab } = useAppStore();
-
   return (
-    <div className="min-h-screen bg-[#09090B] text-[#FAFAFA] font-body selection:bg-[#836EF9]/30 selection:text-white relative">
-      {/* Top Navbar */}
-      <Navbar />
-
-      {/* Main View Router */}
-      <main className="w-full">
-        {activeTab === 'landing' && (
-          <>
-            <HeroSection />
-            <CapabilitiesSection />
-            <VisionSection />
-            <HowItWorksSection />
-            <WhyNowSection />
-            <WhatCanYouAskSection />
-            <OpenSourceSection />
-          </>
-        )}
-
-        {activeTab === 'marketplace' && <MarketplaceView />}
-        {activeTab === 'dashboard' && <DashboardView />}
-        {activeTab === 'wallet' && <WalletView />}
-        {activeTab === 'profile' && <ProfileView />}
-      </main>
-
-      {/* Interactive Global Modals */}
-      <CreateTaskModal />
-      <InteractiveSolverModal />
-
-      {/* Toast Notification System */}
-      <Toasts />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Landing page - no wallet button */}
+        <Route path="/" element={<LandingLayout />}>
+          <Route index element={<LandingPage />} />
+        </Route>
+        
+        {/* App routes - with wallet button in navbar */}
+        <Route path="/app/*" element={<AppLayout />}>
+          <Route path="marketplace" element={<MarketplaceView />} />
+          <Route path="dashboard" element={<DashboardView />} />
+          <Route path="wallet" element={<WalletView />} />
+          <Route path="profile" element={<ProfileView />} />
+        </Route>
+        
+        {/* Redirect old routes to new ones */}
+        <Route path="marketplace" element={<Navigate to="/app/marketplace" replace />} />
+        <Route path="dashboard" element={<Navigate to="/app/dashboard" replace />} />
+        <Route path="wallet" element={<Navigate to="/app/wallet" replace />} />
+        <Route path="profile" element={<Navigate to="/app/profile" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
