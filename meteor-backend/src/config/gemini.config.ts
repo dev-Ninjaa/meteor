@@ -1,6 +1,16 @@
+import { resolve } from 'path';
+import { config as loadEnv } from 'dotenv';
 import { registerAs } from '@nestjs/config';
 
-export default registerAs('gemini', () => ({
-  apiKey: process.env.GEMINI_API_KEY || '',
-  model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
-}));
+const envPaths = [resolve(process.cwd(), '.env'), resolve(process.cwd(), '.env.example')];
+
+export default registerAs('gemini', () => {
+  for (const envPath of envPaths) {
+    loadEnv({ path: envPath });
+  }
+
+  return {
+    apiKey: process.env.GEMINI_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
+  };
+});
