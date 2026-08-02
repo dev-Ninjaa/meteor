@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SubmissionType } from '../../data/mockData';
+import { SubmissionType } from '../../types';
 import {
   Type,
   CheckSquare,

@@ -3,13 +3,13 @@ import { motion } from 'framer-motion';
 import { Bot, RefreshCw, CheckCircle2, ShieldCheck, Zap } from 'lucide-react';
 
 interface VerificationLiveStatusProps {
-  onComplete: () => void;
-  reward: string;
+  taskId: string;
+  verificationType: string;
 }
 
 export const VerificationLiveStatus: React.FC<VerificationLiveStatusProps> = ({
-  onComplete,
-  reward,
+  taskId,
+  verificationType,
 }) => {
   const [step, setStep] = useState<number>(0);
 
@@ -18,7 +18,7 @@ export const VerificationLiveStatus: React.FC<VerificationLiveStatusProps> = ({
     { label: 'Verifying Swarm Requirements...', icon: ShieldCheck, duration: 1200 },
     { label: 'Consensus in Progress...', icon: RefreshCw, duration: 1000 },
     { label: 'Payment Processing on Monad...', icon: Zap, duration: 800 },
-    { label: `Verified & Released ${reward}!`, icon: CheckCircle2, duration: 800 },
+    { label: `Verified & Released!`, icon: CheckCircle2, duration: 800 },
   ];
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export const VerificationLiveStatus: React.FC<VerificationLiveStatusProps> = ({
       }, STEPS[step].duration);
     } else {
       timeout = setTimeout(() => {
-        onComplete();
+        // onComplete();
       }, 1000);
     }
     return () => clearTimeout(timeout);
@@ -72,6 +72,9 @@ export const VerificationLiveStatus: React.FC<VerificationLiveStatusProps> = ({
           animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
           transition={{ duration: 0.3 }}
         />
+      </div>
+      <div className="text-xs text-white/50 font-mono">
+        Task: {taskId.slice(0, 8)}... | Type: {verificationType}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { USE_CASES } from '../../data/mockData';
+import { USE_CASES } from '../../constants/useCases';
 import { motion } from 'framer-motion';
 import { BlurText } from '../shared/BlurText';
 import { useAppStore } from '../../store/useAppStore';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { VerificationType } from '../../data/mockData';
+import { VerificationType } from '../../types';
 import { Bot, UserCheck, Sparkles, Users, User, GitMerge } from 'lucide-react';
 
 interface VerificationBadgeProps {

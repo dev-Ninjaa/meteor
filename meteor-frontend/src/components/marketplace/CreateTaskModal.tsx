@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { useTasks, useCreateTask } from '@/hooks/useTasks';
 import { useAppStore } from '../../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Cpu, ShieldCheck, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
-import { SubmissionType, VerificationType } from '../../data/mockData';
+import { SubmissionType, VerificationType, TaskCategory } from '../../types';
 
 export const CreateTaskModal: React.FC = () => {
-  const { isCreateModalOpen, setIsCreateModalOpen, createTask } = useAppStore();
+  const { isCreateModalOpen, setIsCreateModalOpen } = useAppStore();
+  const createTaskMutation = useCreateTask();
   const [prompt, setPrompt] = useState('');
   const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -16,7 +18,7 @@ export const CreateTaskModal: React.FC = () => {
   const [reward, setReward] = useState('35.0');
   const [workers, setWorkers] = useState('10');
   const [duration, setDuration] = useState('10 mins');
-  const [category, setCategory] = useState<'AI Verification' | 'Code Debugging' | 'Design Feedback' | 'Translation' | 'Local Knowledge' | 'Data Labeling'>('AI Verification');
+  const [category, setCategory] = useState<TaskCategory>('AI Verification');
   const [submissionType, setSubmissionType] = useState<SubmissionType>('text');
   const [verificationType, setVerificationType] = useState<VerificationType>('AI Verification');
 
@@ -68,17 +70,18 @@ export const CreateTaskModal: React.FC = () => {
     e.preventDefault();
     if (!title && !prompt) return;
 
-    createTask({
+    createTaskMutation.mutate({
       title: title || prompt,
       description: description || prompt,
-      rewardNum: parseFloat(reward) || 35.0,
       reward: `${reward} MON`,
-      duration,
+      deadline: undefined,
+      tags: [category],
       workersRequired: parseInt(workers, 10) || 5,
-      category,
-      submissionType,
-      verificationType,
-      difficulty: 'Medium',
+      maxWorkers: parseInt(workers, 10) || 5,
+      verificationMode: verificationType === 'AI Verification' ? 'AI' : verificationType === 'Human Review' ? 'MANUAL' : 'BOTH',
+      allowAiVerification: true,
+      manualVerificationRequired: verificationType === 'Human Review',
+      tokenAddress: undefined,
     });
 
     setIsCreateModalOpen(false);
@@ -277,10 +280,20 @@ export const CreateTaskModal: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="bg-white text-black font-semibold text-xs rounded-full px-6 py-3 hover:bg-white/90 transition-all flex items-center gap-2 shadow-lg"
+                  disabled={createTaskMutation.isPending}
+                  className="bg-white text-black font-semibold text-xs rounded-full px-6 py-3 hover:bg-white/90 transition-all flex items-center gap-2 shadow-lg disabled:opacity-50"
                 >
-                  <span>Publish Task</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  {createTaskMutation.isPending ? (
+                    <>
+                      <span className="animate-spin">⟳</span>
+                      <span>Publishing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Publish Task</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>

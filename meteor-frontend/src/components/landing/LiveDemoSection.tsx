@@ -5,7 +5,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { Play, Sparkles, ShieldCheck, ArrowUpRight, Zap, RefreshCw, Cpu, DollarSign } from 'lucide-react';
 
 export const LiveDemoSection: React.FC = () => {
-  const { setActiveTab, createTask, monBalance } = useAppStore();
+  const { setActiveTab, monBalance } = useAppStore();
   const [promptText, setPromptText] = useState('Audit Claude 3.7 Output for Hallucination in Legal Contract');
   const [isSimulating, setIsSimulating] = useState(false);
   const [step, setStep] = useState<'idle' | 'decomposing' | 'created' | 'joined' | 'verifying' | 'completed'>('idle');
@@ -36,20 +36,6 @@ export const LiveDemoSection: React.FC = () => {
     await new Promise((r) => setTimeout(r, 1000));
     setStep('completed');
     setDemoLog((prev) => [...prev, 'AI Audit: 100% PASS', 'Released 45.0 MON to worker wallet (tx: 0x8f2a...91e4)']);
-
-    // Add to actual store state
-    createTask({
-      title: promptText,
-      description: 'Simulated interactive demo task verified by Meteor AI Engine.',
-      reward: '45.0 MON',
-      rewardNum: 45.0,
-      duration: '5 mins',
-      workersRequired: 1,
-      category: 'AI Verification',
-      difficulty: 'Medium',
-      creator: '0x000...Demo',
-      verificationType: 'AI Verification',
-    });
 
     setIsSimulating(false);
   };
@@ -137,20 +123,22 @@ export const LiveDemoSection: React.FC = () => {
           {/* Presets */}
           <div className="flex items-center gap-2 mt-3 flex-wrap">
             <span className="text-[11px] font-mono text-white/40">Presets:</span>
-            {[
-              'Audit Claude 3.7 Output for Hallucination in Legal Contract',
-              'Verify Tokyo Storefront Hours & Photos',
-              'Debug Rust Async Mutex Lock Crash',
-            ].map((preset, idx) => (
-              <button
-                key={idx}
-                onClick={() => setPromptText(preset)}
-                disabled={isSimulating}
-                className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
-              >
-                {preset.slice(0, 28)}...
-              </button>
-            ))}
+            {
+              [
+                'Audit Claude 3.7 Output for Hallucination in Legal Contract',
+                'Verify Tokyo Storefront Hours & Photos',
+                'Debug Rust Async Mutex Lock Crash',
+              ].map((preset, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setPromptText(preset)}
+                  disabled={isSimulating}
+                  className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 transition-colors"
+                >
+                  {preset.slice(0, 28)}...
+                </button>
+              ))
+            }
           </div>
 
           {/* Interactive Flow Visualizer */}
