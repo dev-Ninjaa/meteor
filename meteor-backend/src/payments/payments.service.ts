@@ -70,7 +70,8 @@ export class PaymentsService {
 
     const { txHash } = await this.blockchainService.createEscrow(
       dto.taskId,
-      workerAddress,
+      task.reward.toString(), // rewardPerWorker
+      task.workersRequired.toString(), // maxWorkers
       totalAmount,
     );
 
@@ -153,7 +154,10 @@ export class PaymentsService {
       throw new ForbiddenException('Cannot release payment without a passed verification');
     }
 
-    const { txHash } = await this.blockchainService.releaseFunds(dto.taskId, dto.submissionId);
+    const { txHash } = await this.blockchainService.releaseFunds(
+      dto.taskId,
+      dto.submissionId,
+    );
 
     const transaction = await this.prisma.$transaction(async (tx) => {
       const txRecord = await tx.transaction.create({
