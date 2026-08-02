@@ -23,6 +23,6 @@
       "@/*": ["src/*"]
     }
   },
-  "include": ["src/**/*", "test/**/*"],
+  "include": ["src/**/*", "test/**/*", "scripts/gemini.config.spec.ts"],
   "exclude": ["node_modules", "dist"]
 }
