@@ -28,7 +28,8 @@ class SocketClient {
   connect(token: string) {
     if (this.socket?.connected) return;
 
-    const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:4000';
+    const wsUrl = (typeof window !== 'undefined' && (window as any).__ENV__?.VITE_WS_URL) 
+      || 'http://localhost:4000';
     
     this.socket = io(wsUrl, {
       auth: { token },
