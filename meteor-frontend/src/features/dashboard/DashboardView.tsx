@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { useTasks } from '@/hooks/useTasks';
 import { useAppStore } from '../../store/useAppStore';
-import { TaskItem, TaskStatus } from '../../data/mockData';
+import { TaskItem, TaskStatus, TaskCategory, VerificationType } from '../../types';
 import { motion } from 'framer-motion';
 import { FadingVideo } from '../../components/shared/FadingVideo';
 import { VerificationBadge } from '../../components/shared/VerificationBadge';
@@ -16,22 +17,26 @@ import {
   Sparkles,
   ArrowUpRight,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
+import { useToast } from '@/hooks/useToast';
 
 export const DashboardView: React.FC = () => {
-  const { tasks, setSelectedTask, setIsSolveModalOpen, setIsCreateModalOpen } = useAppStore();
+  const { data: tasksResponse, isLoading, error } = useTasks();
+  const tasks = tasksResponse?.data || [];
+  const { setSelectedTask, setIsSolveModalOpen, setIsCreateModalOpen } = useAppStore();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'my_tasks' | 'creator_analytics'>('my_tasks');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACCEPTED' | 'IN_PROGRESS' | 'AWAITING_VERIFICATION' | 'COMPLETED' | 'REJECTED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'IN_PROGRESS' | 'VERIFIED' | 'COMPLETED' | 'CANCELLED'>('ALL');
 
   // Filter tasks for worker workflow hub
-  const filteredWorkerTasks = tasks.filter((t) => {
+  const filteredWorkerTasks = tasks.filter((t: TaskItem) => {
     if (statusFilter === 'ALL') return true;
-    if (statusFilter === 'ACCEPTED') return t.status === 'ACCEPTED' || t.status === 'PUBLISHED';
+    if (statusFilter === 'PUBLISHED') return t.status === 'PUBLISHED' || t.status === 'OPEN';
     if (statusFilter === 'IN_PROGRESS') return t.status === 'IN_PROGRESS';
-    if (statusFilter === 'AWAITING_VERIFICATION') return t.status === 'SUBMITTED' || t.status === 'VERIFIED';
+    if (statusFilter === 'VERIFIED') return t.status === 'VERIFIED';
     if (statusFilter === 'COMPLETED') return t.status === 'COMPLETED';
-    if (statusFilter === 'REJECTED') return t.status === 'REJECTED';
+    if (statusFilter === 'CANCELLED') return t.status === 'CANCELLED';
     return true;
   });
 
@@ -42,8 +47,27 @@ export const DashboardView: React.FC = () => {
 
   // Creator analytics metrics
   const totalTasks = tasks.length;
-  const totalSpent = tasks.reduce((acc, t) => acc + t.rewardNum, 0).toFixed(1);
+  const totalSpent = tasks.reduce((acc: number, t: TaskItem) => acc + t.rewardNum, 0).toFixed(1);
   const avgConsensus = 93.8;
+
+  // Show toast on error but don't block UI
+  React.useEffect(() => {
+    if (error && !isLoading) {
+      toast('Failed to load dashboard - using cached data.', 'destructive');
+    }
+  }, [error, isLoading, toast]);
+
+  // Only show full loader if no tasks at all
+  if (isLoading && tasks.length === 0) {
+    return (
+      <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#836EF9] border-t-transparent mx-auto mb-4" />
+          <p className="text-white/60 font-mono text-sm">Loading tasks...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 overflow-hidden">
@@ -58,6 +82,14 @@ export const DashboardView: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="relative z-10 max-w-7xl mx-auto">
+        {/* Error banner if failed but have cached data */}
+        {error && !isLoading && tasks.length > 0 && (
+          <div className="mb-6 p-4 liquid-glass rounded-2xl border border-amber-500/30 bg-amber-500/10 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+            <span className="text-xs font-mono text-amber-300">Using cached data - some tasks may be outdated</span>
+          </div>
+        )}
+
         {/* Top Header & Sub-Toggle */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -112,11 +144,11 @@ export const DashboardView: React.FC = () => {
             >
               {[
                 { label: 'All Lifecycle States', value: 'ALL' },
-                { label: 'Accepted', value: 'ACCEPTED' },
+                { label: 'Published', value: 'PUBLISHED' },
                 { label: 'In Progress', value: 'IN_PROGRESS' },
-                { label: 'Awaiting Verification', value: 'AWAITING_VERIFICATION' },
+                { label: 'Verified', value: 'VERIFIED' },
                 { label: 'Completed', value: 'COMPLETED' },
-                { label: 'Rejected', value: 'REJECTED' },
+                { label: 'Cancelled', value: 'CANCELLED' },
               ].map((tab) => (
                 <button
                   key={tab.value}
@@ -134,7 +166,7 @@ export const DashboardView: React.FC = () => {
 
             {/* Task Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredWorkerTasks.map((task, idx) => (
+              {filteredWorkerTasks.map((task: TaskItem, idx: number) => (
                 <motion.div
                   key={task.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -173,6 +205,12 @@ export const DashboardView: React.FC = () => {
                 </motion.div>
               ))}
             </div>
+
+            {filteredWorkerTasks.length === 0 && (
+              <div className="text-center py-20 text-white/40 font-mono text-xs">
+                No tasks match your current filter.
+              </div>
+            )}
           </div>
         ) : (
           <div>
@@ -206,9 +244,9 @@ export const DashboardView: React.FC = () => {
             </div>
 
             {/* AI Summary Analytics for Tasks */}
-            {tasks.map((task) => (
+            {tasks.map((task: TaskItem) =>
               task.aiSummary && <AiSummaryCard key={task.id} summary={task.aiSummary} />
-            ))}
+            )}
           </div>
         )}
       </div>

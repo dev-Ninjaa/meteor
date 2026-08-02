@@ -1,58 +1,63 @@
 import React from 'react';
+import { useMarketplace } from '@/hooks/useTasks';
 import { useAppStore } from '../../store/useAppStore';
-import { TaskItem } from '../../data/mockData';
+import { TaskItem, TaskCategory, VerificationType, SubmissionType } from '../../types';
 import { motion } from 'framer-motion';
 import { FadingVideo } from '../../components/shared/FadingVideo';
 import { VerificationBadge } from '../../components/shared/VerificationBadge';
 import { ProgressIndicator } from '../../components/shared/ProgressIndicator';
-import { Search, Plus, Clock, Zap, ArrowUpRight, Filter } from 'lucide-react';
+import { Search, Plus, Clock, Zap, ArrowUpRight, Filter, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/useToast';
+
+// Filter options as constants
+const CATEGORIES: (TaskCategory | 'All')[] = [
+  'All',
+  'AI Verification',
+  'Code Debugging',
+  'Translation',
+  'Local Knowledge',
+  'Design Feedback',
+  'Data Labeling',
+];
+
+const SUBMISSION_TYPES: { label: string; value: SubmissionType | 'All' }[] = [
+  { label: 'All Submissions', value: 'All' },
+  { label: 'Text', value: 'text' },
+  { label: 'Multiple Choice', value: 'multiple_choice' },
+  { label: 'Rating', value: 'rating' },
+  { label: 'Image', value: 'image' },
+  { label: 'GPS / Location', value: 'gps' },
+  { label: 'Screen Recording', value: 'screen_recording' },
+];
+
+const VERIFICATION_TYPES: { label: string; value: VerificationType | 'All' }[] = [
+  { label: 'All Pipelines', value: 'All' },
+  { label: 'AI Verification', value: 'AI Verification' },
+  { label: 'Human Review', value: 'Human Review' },
+  { label: 'AI First', value: 'AI First' },
+  { label: 'Consensus', value: 'Consensus' },
+  { label: 'Hybrid', value: 'Hybrid' },
+];
 
 export const MarketplaceView: React.FC = () => {
-  const {
-    tasks,
-    searchQuery,
-    setSearchQuery,
-    selectedCategory,
-    setSelectedCategory,
-    selectedSubmissionType,
-    setSelectedSubmissionType,
-    selectedVerificationType,
-    setSelectedVerificationType,
-    setIsCreateModalOpen,
-    setSelectedTask,
-    setIsSolveModalOpen,
-  } = useAppStore();
+  const { data: tasksResponse, isLoading, error } = useMarketplace({});
+  const tasks = tasksResponse?.data || [];
+  const { setSelectedTask, setIsSolveModalOpen, setIsCreateModalOpen } = useAppStore();
+  const { toast } = useToast();
 
-  const categories = [
-    'All',
-    'AI Verification',
-    'Code Debugging',
-    'Translation',
-    'Local Knowledge',
-    'Design Feedback',
-    'Data Labeling',
-  ];
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [selectedCategory, setSelectedCategory] = React.useState<TaskCategory | 'All'>('All');
+  const [selectedSubmissionType, setSelectedSubmissionType] = React.useState<SubmissionType | 'All'>('All');
+  const [selectedVerificationType, setSelectedVerificationType] = React.useState<VerificationType | 'All'>('All');
 
-  const submissionTypes = [
-    { label: 'All Submissions', value: 'All' },
-    { label: 'Text', value: 'text' },
-    { label: 'Multiple Choice', value: 'multiple_choice' },
-    { label: 'Rating', value: 'rating' },
-    { label: 'Image', value: 'image' },
-    { label: 'GPS / Location', value: 'gps' },
-    { label: 'Screen Recording', value: 'screen_recording' },
-  ];
+  // Show toast on error but don't block UI
+  React.useEffect(() => {
+    if (error && !isLoading) {
+      toast('Failed to load marketplace - using cached data. Pull to refresh.', 'destructive');
+    }
+  }, [error, isLoading, toast]);
 
-  const verificationTypes = [
-    { label: 'All Pipelines', value: 'All' },
-    { label: 'AI Verification', value: 'AI Verification' },
-    { label: 'Human Review', value: 'Human Review' },
-    { label: 'AI First', value: 'AI First' },
-    { label: 'Consensus', value: 'Consensus' },
-    { label: 'Hybrid', value: 'Hybrid' },
-  ];
-
-  const filteredTasks = tasks.filter((t) => {
+  const filteredTasks = tasks.filter((t: TaskItem) => {
     const matchesCategory = selectedCategory === 'All' || t.category === selectedCategory;
     const matchesSubmission = selectedSubmissionType === 'All' || t.submissionType === selectedSubmissionType;
     const matchesVerification = selectedVerificationType === 'All' || t.verificationType === selectedVerificationType;
@@ -67,6 +72,18 @@ export const MarketplaceView: React.FC = () => {
     setIsSolveModalOpen(true);
   };
 
+  // Only show full loader if no tasks at all
+  if (isLoading && tasks.length === 0) {
+    return (
+      <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#836EF9] border-t-transparent mx-auto mb-4" />
+          <p className="text-white/60 font-mono text-sm">Loading marketplace...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 overflow-hidden">
       {/* Background Video (full bleed) with custom JS crossfade */}
@@ -80,6 +97,14 @@ export const MarketplaceView: React.FC = () => {
 
       {/* Main Content Area */}
       <div className="relative z-10 max-w-7xl mx-auto">
+        {/* Error banner if failed but have cached data */}
+        {error && !isLoading && tasks.length > 0 && (
+          <div className="mb-6 p-4 liquid-glass rounded-2xl border border-amber-500/30 bg-amber-500/10 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-400 shrink-0" />
+            <span className="text-xs font-mono text-amber-300">Using cached data - some tasks may be outdated</span>
+          </div>
+        )}
+
         {/* Top Header & Action */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -132,10 +157,10 @@ export const MarketplaceView: React.FC = () => {
             <div>
               <select
                 value={selectedSubmissionType}
-                onChange={(e) => setSelectedSubmissionType(e.target.value)}
+                onChange={(e) => setSelectedSubmissionType(e.target.value as any)}
                 className="w-full liquid-glass border border-white/10 rounded-2xl px-4 py-3 text-xs text-white bg-black focus:outline-none focus:border-[#836EF9]"
               >
-                {submissionTypes.map((st) => (
+                {SUBMISSION_TYPES.map((st) => (
                   <option key={st.value} value={st.value} className="bg-black text-white">
                     {st.label}
                   </option>
@@ -147,10 +172,10 @@ export const MarketplaceView: React.FC = () => {
             <div>
               <select
                 value={selectedVerificationType}
-                onChange={(e) => setSelectedVerificationType(e.target.value)}
+                onChange={(e) => setSelectedVerificationType(e.target.value as any)}
                 className="w-full liquid-glass border border-white/10 rounded-2xl px-4 py-3 text-xs text-white bg-black focus:outline-none focus:border-[#836EF9]"
               >
-                {verificationTypes.map((vt) => (
+                {VERIFICATION_TYPES.map((vt) => (
                   <option key={vt.value} value={vt.value} className="bg-black text-white">
                     {vt.label}
                   </option>
@@ -162,7 +187,7 @@ export const MarketplaceView: React.FC = () => {
           {/* Category Horizontal Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
             <Filter className="w-3.5 h-3.5 text-white/40 shrink-0" />
-            {categories.map((cat) => (
+            {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -180,7 +205,7 @@ export const MarketplaceView: React.FC = () => {
 
         {/* Dense Information Task Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTasks.map((task, idx) => (
+          {filteredTasks.map((task: TaskItem, idx: number) => (
             <motion.div
               key={task.id}
               initial={{ opacity: 0, y: 20 }}
@@ -243,13 +268,13 @@ export const MarketplaceView: React.FC = () => {
               </div>
             </motion.div>
           ))}
-        </div>
 
-        {filteredTasks.length === 0 && (
-          <div className="text-center py-20 text-white/40 font-mono text-xs">
-            No active swarm tasks match your current filter parameters.
-          </div>
-        )}
+          {filteredTasks.length === 0 && (
+            <div className="col-span-full text-center py-20 text-white/40 font-mono text-xs">
+              No active swarm tasks match your current filter parameters.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

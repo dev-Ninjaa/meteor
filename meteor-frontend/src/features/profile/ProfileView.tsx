@@ -1,5 +1,7 @@
 import React from 'react';
-import { useAppStore } from '../../store/useAppStore';
+import { useMe, useUpdateMe } from '@/hooks/useAuth';
+import { useAccount } from 'wagmi';
+import { useToast } from '@/hooks/useToast';
 import { motion } from 'framer-motion';
 import { FadingVideo } from '../../components/shared/FadingVideo';
 import {
@@ -13,33 +15,38 @@ import {
   GitCommit,
   Flame,
   UserCheck,
-  Award as Trophy
+  Award as Trophy,
+  GitCommit as GitCommitIcon,
+  AlertCircle,
 } from 'lucide-react';
 
 export const ProfileView: React.FC = () => {
-  const { walletAddress, monBalance } = useAppStore();
+  const { address: wagmiAddress, isConnected } = useAccount();
+  const { data: user, isLoading: userLoading, error: userError, refetch } = useMe();
+  const updateMe = useUpdateMe();
+  const { toast } = useToast();
 
-  const achievements = [
-    { title: 'Top Tester', category: 'Quality', icon: Trophy, color: 'text-amber-400' },
-    { title: 'Bug Hunter', category: 'Code Debugging', icon: Zap, color: 'text-[#836EF9]' },
-    { title: 'Translator', category: 'Localization', icon: Star, color: 'text-indigo-400' },
-    { title: 'Fast Responder', category: 'Sub-Second', icon: Clock, color: 'text-emerald-400' },
-    { title: 'Verified Expert', category: 'AI Red-Teaming', icon: ShieldCheck, color: 'text-cyan-400' },
-  ];
+  const formatAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  const displayAddress = user?.walletAddress || wagmiAddress || '';
 
-  const skills = [
-    'AI Red-Teaming & Hallucination Audit',
-    'Rust Async Mutex Locks',
-    'Japanese Localization & Idioms',
-    'California Civil Code § 1668 Compliance',
-    'Satellite Thermal Imagery Annotation',
-    'Monad Smart Contract Audit',
-  ];
+  // Show toast on error but don't block UI
+  React.useEffect(() => {
+    if (userError && !userLoading) {
+      toast('Profile load failed - using wallet address. Some features may be limited.', 'destructive');
+    }
+  }, [userError, userLoading, toast]);
 
-  const activityGrid = Array.from({ length: 48 }, (_, i) => ({
-    count: Math.floor(Math.random() * 5),
-    day: i,
-  }));
+  // Always show loading briefly, then render UI with whatever data we have
+  if (userLoading && !displayAddress) {
+    return (
+      <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#836EF9] border-t-transparent mx-auto mb-4" />
+          <p className="text-white/60 font-mono text-sm">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 overflow-hidden">
@@ -63,37 +70,47 @@ export const ProfileView: React.FC = () => {
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#836EF9] to-indigo-500 flex items-center justify-center text-black font-bold font-mono text-xl shadow-xl border-2 border-white">
-              MN
+              {user?.username ? user.username.slice(0, 2).toUpperCase() : 'MN'}
             </div>
 
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-white font-mono">{walletAddress}</h1>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono uppercase">
-                  Verified Expert Node
-                </span>
+                <h1 className="text-xl font-bold text-white font-mono">
+                  {displayAddress ? formatAddress(displayAddress) : 'Not connected'}
+                </h1>
+                {displayAddress && (
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-mono uppercase">
+                    {user ? 'Verified Expert Node' : 'Wallet Connected'}
+                  </span>
+                )}
+                {userError && displayAddress && (
+                  <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-mono uppercase flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Limited Mode
+                  </span>
+                )}
               </div>
               <p className="text-xs text-white/60 mt-1 font-light">
-                Programmable Human Intelligence Worker & AI Verification Specialist
+                {user?.bio || 'Programmable Human Intelligence Worker & AI Verification Specialist'}
               </p>
 
               {/* GitHub-style key metrics bar */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-4 border-t border-white/10 text-xs font-mono">
                 <div>
                   <div className="text-white/40">Completion Rate</div>
-                  <div className="text-lg font-bold text-emerald-400">99.8%</div>
+                  <div className="text-lg font-bold text-emerald-400">{user ? '99.8%' : '—'}</div>
                 </div>
                 <div>
                   <div className="text-white/40">Verification Accuracy</div>
-                  <div className="text-lg font-bold text-[#836EF9]">100%</div>
+                  <div className="text-lg font-bold text-[#836EF9]">{user ? '100%' : '—'}</div>
                 </div>
                 <div>
                   <div className="text-white/40">Tasks Solved</div>
-                  <div className="text-lg font-bold text-white">48 Solved</div>
+                  <div className="text-lg font-bold text-white">{user ? '48' : '—'}</div>
                 </div>
                 <div>
-                  <div className="text-white/40">Avg Response Time</div>
-                  <div className="text-lg font-bold text-indigo-400">1.8 mins</div>
+                  <div className="text-white/40">Reputation</div>
+                  <div className="text-lg font-bold text-indigo-400">{user?.reputation || '—'}</div>
                 </div>
               </div>
             </div>
@@ -109,13 +126,16 @@ export const ProfileView: React.FC = () => {
         >
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-heading italic text-2xl text-white flex items-center gap-2">
-              <GitCommit className="w-5 h-5 text-[#836EF9]" /> Verification Activity Heatmap
+              <GitCommitIcon className="w-5 h-5 text-[#836EF9]" /> Verification Activity Heatmap
             </h3>
             <span className="text-xs font-mono text-white/50">48 verifications in last 30 days</span>
           </div>
 
           <div className="grid grid-cols-12 sm:grid-cols-24 gap-1.5 pt-2">
-            {activityGrid.map((item, idx) => (
+            {Array.from({ length: 48 }, (_, i) => ({
+              count: Math.floor(Math.random() * 5),
+              day: i,
+            })).map((item, idx) => (
               <div
                 key={idx}
                 title={`${item.count} verifications on Day ${item.day + 1}`}
@@ -144,18 +164,41 @@ export const ProfileView: React.FC = () => {
           >
             <h3 className="font-heading italic text-2xl text-white mb-4">Earned Protocol Badges</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {achievements.map((a, i) => {
-                const Icon = a.icon;
-                return (
-                  <div key={i} className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center gap-3">
-                    <Icon className={`w-5 h-5 ${a.color}`} />
-                    <div>
-                      <div className="text-xs font-semibold text-white">{a.title}</div>
-                      <div className="text-[10px] font-mono text-white/40">{a.category}</div>
-                    </div>
-                  </div>
-                );
-              })}
+              <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center gap-3">
+                <Trophy className="w-5 h-5 text-amber-400" />
+                <div>
+                  <div className="text-xs font-semibold text-white">Top Tester</div>
+                  <div className="text-[10px] font-mono text-white/40">Quality</div>
+                </div>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center gap-3">
+                <Zap className="w-5 h-5 text-[#836EF9]" />
+                <div>
+                  <div className="text-xs font-semibold text-white">Bug Hunter</div>
+                  <div className="text-[10px] font-mono text-white/40">Code Debugging</div>
+                </div>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center gap-3">
+                <Star className="w-5 h-5 text-indigo-400" />
+                <div>
+                  <div className="text-xs font-semibold text-white">Translator</div>
+                  <div className="text-[10px] font-mono text-white/40">Localization</div>
+                </div>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center gap-3">
+                <Clock className="w-5 h-5 text-emerald-400" />
+                <div>
+                  <div className="text-xs font-semibold text-white">Fast Responder</div>
+                  <div className="text-[10px] font-mono text-white/40">Sub-Second</div>
+                </div>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                <div>
+                  <div className="text-xs font-semibold text-white">Verified Expert</div>
+                  <div className="text-[10px] font-mono text-white/40">AI Red-Teaming</div>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -168,7 +211,14 @@ export const ProfileView: React.FC = () => {
           >
             <h3 className="font-heading italic text-2xl text-white mb-4">Verified Skill Vectors</h3>
             <div className="flex flex-wrap gap-2">
-              {skills.map((skill, i) => (
+              {[
+                'AI Red-Teaming & Hallucination Audit',
+                'Rust Async Mutex Locks',
+                'Japanese Localization & Idioms',
+                'California Civil Code § 1668 Compliance',
+                'Satellite Thermal Imagery Annotation',
+                'Monad Smart Contract Audit',
+              ].map((skill, i) => (
                 <span
                   key={i}
                   className="px-3.5 py-2 rounded-2xl bg-white/5 border border-white/10 text-xs font-mono text-white/80"
@@ -176,6 +226,53 @@ export const ProfileView: React.FC = () => {
                   ✓ {skill}
                 </span>
               ))}
+            </div>
+            
+            {/* Profile Settings */}
+            <div className="mt-8 pt-6 border-t border-white/10">
+              <h4 className="font-heading italic text-xl text-white mb-4">Profile Settings</h4>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                try {
+                  await updateMe.mutateAsync({
+                    bio: formData.get('bio') as string,
+                  });
+                  toast('Profile updated - your bio has been saved.', 'success');
+                } catch (err) {
+                  toast('Update failed - could not save bio. Please try again.', 'destructive');
+                }
+              }} className="space-y-4">
+                <div>
+                  <label className="text-xs font-mono text-white/50 mb-1 block uppercase tracking-wider">
+                    Bio
+                  </label>
+                  <textarea
+                    name="bio"
+                    rows={4}
+                    defaultValue={user?.bio || ''}
+                    placeholder="Tell others about your skills and experience..."
+                    className="w-full bg-[#111113] border border-white/15 rounded-2xl p-4 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#836EF9] transition-all resize-none font-mono"
+                  />
+                </div>
+                
+                <button
+                  type="submit"
+                  disabled={updateMe.isPending}
+                  className="w-full py-3 rounded-2xl bg-white text-black font-semibold text-xs hover:bg-white/90 transition-all flex items-center justify-center gap-2 shadow-lg disabled:opacity-50"
+                >
+                  {updateMe.isPending ? (
+                    <>
+                      <span className="animate-spin">⟳</span>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Save Profile</span>
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
           </motion.div>
         </div>
