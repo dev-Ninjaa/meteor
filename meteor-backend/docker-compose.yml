@@ -39,23 +39,8 @@ services:
     restart: unless-stopped
     ports:
       - '4000:4000'
-    environment:
-      NODE_ENV: development
-      PORT: 4000
-      API_PREFIX: api
-      API_VERSION: 1
-      DATABASE_URL: postgresql://meteor:meteor123@postgres:5432/meteor_db
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      JWT_SECRET: super-secret-jwt-key-change-in-production
-      JWT_EXPIRATION: 15m
-      JWT_REFRESH_EXPIRATION: 7d
-      MONAD_RPC_URL: https://testnet-rpc.monad.xyz
-      MONAD_CHAIN_ID: 10143
-      MONAD_ESCROW_CONTRACT_ADDRESS: ''
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      CORS_ORIGIN: http://localhost:3000
-      LOG_LEVEL: debug
+    env_file:
+      - .env
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
