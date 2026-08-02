@@ -17,6 +17,8 @@ export type Transaction = {
   type: string;
   taskId: string;
   userId: string;
+  taskTitle: string;
+  timestamp: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
