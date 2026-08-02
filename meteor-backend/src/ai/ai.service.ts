@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { buildTaskGeneratorPrompt } from './prompts/task-generator.prompt';
 import { buildVerificationPrompt } from './prompts/verification.prompt';
 
 const SUPPORTED_GEMINI_MODELS = ['gemini-3.6-flash'] as const;
@@ -29,6 +30,7 @@ export class AiService {
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('gemini.apiKey') || process.env.GEMINI_API_KEY || '';
+
     if (apiKey) {
       this.genAi = new GoogleGenerativeAI(apiKey);
     }
@@ -61,7 +63,12 @@ export class AiService {
     for (const modelName of modelNames) {
       try {
         const model = this.genAi.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
+        const result = await Promise.race([
+          model.generateContent(prompt),
+          new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error(`Gemini request timed out for ${modelName}`)), 10000);
+          }),
+        ]);
         return result.response.text();
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
@@ -121,12 +128,17 @@ export class AiService {
   }
 
   private buildTaskGenerationPrompt(dto: { prompt: string; category?: string }): string {
-    return `You are an AI that generates structured microtasks for a bounty platform.
+    const prompt = buildTaskGeneratorPrompt({
+      userPrompt: dto.prompt,
+      maxWorkers: 5,
+      rewardRange: '10-500 MON',
+    });
 
-User request: "${dto.prompt}"
+    return `${prompt}
+
 ${dto.category ? `Category hint: ${dto.category}` : ''}
 
-Generate a task in this exact JSON format (no extra text):
+Return only a JSON object in this exact shape:
 {
   "title": "string (max 100 chars)",
   "description": "string (detailed, actionable)",
@@ -136,14 +148,7 @@ Generate a task in this exact JSON format (no extra text):
   "maxWorkers": number (workersRequired-20),
   "verificationMode": "AI" | "MANUAL" | "BOTH",
   "category": "string"
-}
-
-Guidelines:
-- Reward: 10-500 MON per worker based on difficulty
-- workersRequired: how many workers need to complete the task
-- maxWorkers: maximum workers allowed to join
-- verificationMode: AI (auto-verify), MANUAL (creator verifies), BOTH
-- Tags: 3-5 relevant keywords`;
+}`;
   }
 
   private parseTaskResponse(response: string): AiTaskSuggestion {
