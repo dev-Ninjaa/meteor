@@ -3,12 +3,18 @@ import type { Notification, QueryNotificationsDto } from '../../types/notificati
 import type { PaginatedResponse } from '../../types';
 
 export const notificationsApi = {
-  list: (params?: QueryNotificationsDto) => 
+  list: (params?: QueryNotificationsDto) =>
     api.get<PaginatedResponse<Notification>>('/notifications', params),
 
-  markRead: (id: string) => 
+  getUnreadCount: () =>
+    api.get<number>('/notifications/unread-count'),
+
+  markRead: (id: string) =>
     api.patch(`/notifications/${id}/read`),
 
-  markAllRead: () => 
+  markAllRead: () =>
     api.patch('/notifications/read-all'),
+
+  delete: (id: string) =>
+    api.delete(`/notifications/${id}`),
 };
