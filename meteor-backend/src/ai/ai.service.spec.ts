@@ -1,3 +1,5 @@
+/// <reference types="jest" />
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { AiService } from './ai.service';
@@ -6,7 +8,10 @@ import { geminiConfig } from '../config';
 describe('AiService', () => {
   let service: AiService;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    process.env.GEMINI_API_KEY = '';
+    process.env.GEMINI_MODEL = 'gemini-3.6-flash';
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot({ isGlobal: true, load: [geminiConfig] })],
       providers: [AiService],
