@@ -50,3 +50,39 @@ export function useRefundEscrow() {
     },
   });
 }
+
+// Aggregated hook for WalletView
+export function usePayments() {
+  const { data: transactionsResponse, isLoading } = useTransactions();
+  const transactions = transactionsResponse?.data || [];
+  
+  const totalEarnings = transactions
+    .filter((t: Transaction) => t.amount.startsWith('+'))
+    .reduce((acc: number, t: Transaction) => acc + parseFloat(t.amount.replace('+', '').replace(' MON', '')), 0)
+    .toFixed(1);
+
+  const totalSpending = transactions
+    .filter((t: Transaction) => t.amount.startsWith('-'))
+    .reduce((acc: number, t: Transaction) => acc + Math.abs(parseFloat(t.amount.replace('-', '').replace(' MON', ''))), 0)
+    .toFixed(1);
+
+  const pendingRewards = transactions
+    .filter((t: Transaction) => t.status === 'PENDING' && t.amount.startsWith('+'))
+    .reduce((acc: number, t: Transaction) => acc + parseFloat(t.amount.replace('+', '').replace(' MON', '')), 0);
+
+  const createEscrow = useCreateEscrow();
+  const releaseEscrow = useReleaseEscrow();
+  const refundEscrow = useRefundEscrow();
+
+  return {
+    transactions,
+    isLoading,
+    totalEarnings,
+    totalSpending,
+    pendingRewards,
+    createEscrow,
+    releaseEscrow,
+    refundEscrow,
+    claimPayment: null, // Would be wagmi hook
+  };
+}

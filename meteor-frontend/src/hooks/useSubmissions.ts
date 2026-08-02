@@ -61,3 +61,16 @@ export function useVerification(submissionId: string) {
     enabled: !!submissionId,
   });
 }
+
+// Aggregated hook for components that need multiple submission operations
+export function useSubmissions() {
+  const createSubmission = useCreateSubmission();
+  const verifyAi = useVerifySubmissionAi();
+  const verifyManual = useVerifySubmissionManual();
+  
+  return {
+    create: createSubmission,
+    verifyAi,
+    verifyManual,
+  };
+}

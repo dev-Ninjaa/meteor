@@ -11,22 +11,52 @@ export function useNotifications(params?: QueryNotificationsDto) {
   });
 }
 
-export function useMarkNotificationRead() {
+export function useUnreadCount() {
+  return useQuery({
+    queryKey: ['notifications', 'unread-count'],
+    queryFn: () => notificationsApi.getUnreadCount(),
+    refetchInterval: 30000,
+  });
+}
+
+export function useMarkRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: notificationsApi.markRead,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
+      qc.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 }
 
-export function useMarkAllNotificationsRead() {
+export function useMarkAllRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: notificationsApi.markAllRead,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['notifications'] });
+      qc.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 }
+
+export function useDeleteNotification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: notificationsApi.delete,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+      qc.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+    },
+  });
+}
+
+// Exported as an object for easier access
+export const notificationsHooks = {
+  useList: useNotifications,
+  useUnreadCount,
+  useMarkRead,
+  useMarkAllRead,
+  useDelete: useDeleteNotification,
+};

@@ -1,6 +1,6 @@
 // Auth hooks
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi } from '../lib/api';
+import { authApi, api } from '../lib/api';
 import type { Address } from '../types/base';
 
 export function useAuth() {
@@ -12,6 +12,13 @@ export function useAuth() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['user', 'me'], data.user);
+      // Store token for socket connection
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
+        // IMPORTANT: Set token on api client
+        api.setToken(data.accessToken);
+      }
     },
   });
 
@@ -19,10 +26,32 @@ export function useAuth() {
     mutationFn: authApi.logout,
     onSuccess: () => {
       queryClient.clear();
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        api.setToken(null);
+      }
     },
   });
 
-  return { login, logout };
+  const getToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('accessToken');
+    }
+    return null;
+  };
+
+  // Initialize api client with token from localStorage on app start
+  const initializeAuth = () => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        api.setToken(token);
+      }
+    }
+  };
+
+  return { login, logout, getToken, initializeAuth };
 }
 
 export function useMe() {
