@@ -1,7 +1,67 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createPublicClient, createWalletClient, http, parseEther } from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
+import { Injectable, Logger } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { createPublicClient, createWalletClient, http, parseEther } from 'viem'
+import { encodeFunctionData } from 'viem/utils'
+import { privateKeyToAccount } from 'viem/accounts'
+
+const ESCROW_ABI = [
+  {
+    type: 'function',
+    name: 'lockEscrow',
+    stateMutability: 'payable',
+    inputs: [
+      { name: 'taskId', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'rewardPerWorker', type: 'uint256', internalType: 'uint256' },
+      { name: 'maxWorkers', type: 'uint256', internalType: 'uint256' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'releaseEscrow',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'taskId', type: 'bytes32', internalType: 'bytes32' },
+      { name: 'submissionId', type: 'bytes32', internalType: 'bytes32' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'refundRemaining',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'taskId', type: 'bytes32', internalType: 'bytes32' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'claimPayment',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'taskId', type: 'bytes32', internalType: 'bytes32' }],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'getTaskEscrow',
+    stateMutability: 'view',
+    inputs: [{ name: 'taskId', type: 'bytes32', internalType: 'bytes32' }],
+    outputs: [
+      { name: 'creator', type: 'address', internalType: 'address' },
+      { name: 'rewardPerWorker', type: 'uint256', internalType: 'uint256' },
+      { name: 'maxWorkers', type: 'uint256', internalType: 'uint256' },
+      { name: 'totalLocked', type: 'uint256', internalType: 'uint256' },
+      { name: 'totalReleased', type: 'uint256', internalType: 'uint256' },
+      { name: 'cancelled', type: 'bool', internalType: 'bool' },
+    ],
+  },
+  {
+    type: 'function',
+    name: 'getContractBalance',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+  },
+] as const
 
 const MONAD_CHAIN = {
   id: 10143,
@@ -44,48 +104,80 @@ export class BlockchainService {
 
   async createEscrow(
     taskId: string,
-    workerAddress: string,
+    rewardPerWorker: string,
+    maxWorkers: string,
     amount: string,
   ): Promise<{ txHash: string }> {
     this.logger.log(
-      `Creating escrow for task ${taskId}, worker ${workerAddress}, amount ${amount}`,
+      `Creating escrow for task ${taskId}, rewardPerWorker ${rewardPerWorker}, maxWorkers ${maxWorkers}, amount ${amount}`,
     );
 
     if (!this.walletClient) {
       throw new Error('Escrow wallet not configured');
     }
 
+    const taskIdBytes32 = taskId as `0x${string}`;
+    const rewardPerWorkerWei = parseEther(rewardPerWorker);
+    const maxWorkersBigInt = BigInt(maxWorkers);
+
+    const data = encodeFunctionData({
+      abi: ESCROW_ABI,
+      functionName: 'lockEscrow',
+      args: [taskIdBytes32, rewardPerWorkerWei, BigInt(maxWorkers)],
+    });
+
     const hash = await this.walletClient.sendTransaction({
       to: this.escrowContractAddress as `0x${string}`,
       value: parseEther(amount),
+      data,
     });
 
     return { txHash: hash };
   }
 
-  async releaseFunds(escrowId: string, submissionId: string): Promise<{ txHash: string }> {
-    this.logger.log(`Releasing funds for escrow ${escrowId}, submission ${submissionId}`);
+  async releaseFunds(
+    taskId: string,
+    submissionId: string,
+  ): Promise<{ txHash: string }> {
+    this.logger.log(`Releasing funds for task ${taskId}, submission ${submissionId}`);
 
     if (!this.walletClient) {
       throw new Error('Escrow wallet not configured');
     }
 
+    const data = encodeFunctionData({
+      abi: ESCROW_ABI,
+      functionName: 'releaseEscrow',
+      args: [taskId as `0x${string}`, submissionId as `0x${string}`],
+    });
+
     const hash = await this.walletClient.sendTransaction({
       to: this.escrowContractAddress as `0x${string}`,
+      data,
     });
 
     return { txHash: hash };
   }
 
-  async refundEscrow(escrowId: string, reason: string): Promise<{ txHash: string }> {
-    this.logger.log(`Refunding escrow ${escrowId}, reason: ${reason}`);
+  async refundEscrow(
+    taskId: string,
+    reason: string,
+  ): Promise<{ txHash: string }> {
+    this.logger.log(`Refunding escrow for task ${taskId}, reason: ${reason}`);
 
     if (!this.walletClient) {
       throw new Error('Escrow wallet not configured');
     }
 
+    const data = encodeFunctionData({
+      abi: ESCROW_ABI,
+      functionName: 'refundRemaining',
+      args: [taskId as `0x${string}`],
+    });
+
     const hash = await this.walletClient.sendTransaction({
       to: this.escrowContractAddress as `0x${string}`,
+      data,
     });
 
     return { txHash: hash };
