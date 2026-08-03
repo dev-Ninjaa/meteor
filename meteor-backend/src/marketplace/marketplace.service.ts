@@ -19,6 +19,7 @@ export interface MarketplaceTaskResponse {
   verificationMode: string;
   allowAiVerification: boolean;
   manualVerificationRequired: boolean;
+  escrowStatus: string;
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
@@ -44,6 +45,7 @@ export class MarketplaceService {
     const where: Prisma.TaskWhereInput = {
       status: 'OPEN',
       deletedAt: null,
+      escrowStatus: 'LOCKED', // Only show tasks with locked escrow (funded)
     };
 
     if (query.search) {
@@ -90,6 +92,27 @@ export class MarketplaceService {
           skip,
           take: limit,
           orderBy,
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            reward: true,
+            tokenAddress: true,
+            status: true,
+            aiGenerated: true,
+            tags: true,
+            workersRequired: true,
+            workersJoined: true,
+            workersCompleted: true,
+            maxWorkers: true,
+            verificationMode: true,
+            allowAiVerification: true,
+            manualVerificationRequired: true,
+            escrowStatus: true,
+            createdById: true,
+            createdAt: true,
+            updatedAt: true,
+          },
         }),
         this.prisma.task.count({ where }),
       ]);
@@ -174,6 +197,7 @@ export class MarketplaceService {
     verificationMode: string;
     allowAiVerification: boolean;
     manualVerificationRequired: boolean;
+    escrowStatus: string;
     createdById: string;
     createdAt: Date;
     updatedAt: Date;
@@ -194,6 +218,7 @@ export class MarketplaceService {
       verificationMode: task.verificationMode,
       allowAiVerification: task.allowAiVerification,
       manualVerificationRequired: task.manualVerificationRequired,
+      escrowStatus: task.escrowStatus,
       createdById: task.createdById,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
