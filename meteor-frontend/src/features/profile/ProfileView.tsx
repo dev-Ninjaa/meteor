@@ -2,6 +2,7 @@ import React from 'react';
 import { useMe, useUpdateMe } from '@/hooks/useAuth';
 import { useAccount } from 'wagmi';
 import { useToast } from '@/hooks/useToast';
+import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FadingVideo } from '../../components/shared/FadingVideo';
 import {
@@ -27,16 +28,20 @@ export const ProfileView: React.FC = () => {
   const { toast } = useToast();
 
   const formatAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  const displayAddress = user?.walletAddress || wagmiAddress || '';
+    const displayAddress = user?.walletAddress || wagmiAddress || '';
 
-  // Show toast on error but don't block UI
-  React.useEffect(() => {
-    if (userError && !userLoading) {
-      toast('Profile load failed - using wallet address. Some features may be limited.', 'destructive');
-    }
-  }, [userError, userLoading, toast]);
+    // Show toast on error but don't block UI - only show once per error
+    const errorToastShown = useRef(false);
+    React.useEffect(() => {
+      if (userError && !userLoading && !errorToastShown.current) {
+        errorToastShown.current = true;
+        toast('Profile load failed - using wallet address. Some features may be limited.', 'destructive');
+      } else if (!userError) {
+        errorToastShown.current = false;
+      }
+    }, [userError, userLoading]);
 
-  // Always show loading briefly, then render UI with whatever data we have
+    // Always show loading briefly, then render UI with whatever data we have
   if (userLoading && !displayAddress) {
     return (
       <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 flex items-center justify-center">
