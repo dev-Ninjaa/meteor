@@ -23,6 +23,7 @@ import { SubmissionsModule } from './submissions/submissions.module';
 import { PaymentsModule } from './payments/payments.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { WebSocketModule } from './websocket/websocket.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { GlobalValidationPipe } from './common/pipes/global-validation.pipe';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -56,6 +57,7 @@ import { AppController } from './app.controller';
     PaymentsModule,
     NotificationsModule,
     WebSocketModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [
