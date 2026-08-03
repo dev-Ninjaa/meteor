@@ -25,6 +25,7 @@ export type Transaction = {
 
 export type CreateEscrowDto = {
   taskId: string;
+  txHash: string;
   amount?: string;
 };
 

@@ -29,4 +29,7 @@ export type AiTaskSuggestion = {
   tags: string[];
   workersRequired: number;
   verificationMode: VerificationMode;
+  category: string;
+  maxWorkers: number;
+  submissionType: string;
 };

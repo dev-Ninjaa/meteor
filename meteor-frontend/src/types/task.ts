@@ -54,6 +54,7 @@ export type TaskListResponse = PaginatedResponse<Task>;
 
 // Frontend-compatible task type (for UI components)
 export type TaskItem = {
+  mySubmission?: any;
   id: string;
   title: string;
   description: string;

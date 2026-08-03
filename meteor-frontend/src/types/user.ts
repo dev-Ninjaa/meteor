@@ -13,8 +13,30 @@ export type User = {
   role: 'USER' | 'ADMIN';
 };
 
+// Backend returns wrapped responses: {statusCode, message, data, timestamp, path}
 export type NonceRequest = { address: Address };
-export type NonceResponse = { nonce: string; expiresAt: Timestamp };
-export type VerifyRequest = { address: Address; signature: string; nonce: string };
+export type NonceResponse = { 
+  statusCode: number;
+  message: string;
+  data: { nonce: string; walletAddress: string };
+  timestamp: string;
+  path: string;
+};
+export type VerifyRequest = { address: Address; signature: string; nonce?: string };
+
+// Auth response wrapped in backend's standard response
+export type AuthResponse = { 
+  statusCode: number;
+  message: string;
+  data: { accessToken: string; refreshToken: string; user: User };
+  timestamp: string;
+  path: string;
+};
 export type RefreshRequest = { refreshToken: string };
-export type AuthResponse = { accessToken: string; refreshToken: string; user: User };
+export type RefreshResponse = { 
+  statusCode: number;
+  message: string;
+  data: { accessToken: string; refreshToken: string };
+  timestamp: string;
+  path: string;
+};
