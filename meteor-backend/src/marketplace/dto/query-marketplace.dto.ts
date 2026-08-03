@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, Min, IsEnum, Matches } from 'class-validator';
+import { IsString, IsOptional, IsNumber, Min, IsEnum, Matches, IsBoolean } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class QueryMarketplaceDto {
@@ -48,6 +48,11 @@ export class QueryMarketplaceDto {
   @IsString()
   @IsOptional()
   createdBy?: string;
+
+  @ApiPropertyOptional({ description: 'Show completed tasks', example: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  showCompleted?: boolean;
 
   @ApiPropertyOptional({
     description: 'Sort order',

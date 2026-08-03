@@ -43,10 +43,16 @@ export class MarketplaceService {
     const skip = (page - 1) * limit;
 
     const where: Prisma.TaskWhereInput = {
-      status: 'OPEN',
       deletedAt: null,
       escrowStatus: 'LOCKED', // Only show tasks with locked escrow (funded)
     };
+
+    // Show both OPEN and COMPLETED tasks if showCompleted is true, otherwise only OPEN
+    if (!query.showCompleted) {
+      where.status = 'OPEN';
+    } else {
+      where.status = { in: ['OPEN', 'COMPLETED'] };
+    }
 
     if (query.search) {
       where.OR = [

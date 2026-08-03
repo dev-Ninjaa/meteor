@@ -81,17 +81,6 @@ export class SubmissionsService {
         data: { workersCompleted: { increment: 1 } },
       });
 
-      // Check if all workers have completed - auto-complete task
-      const updatedTask = await tx.task.findUnique({ where: { id: taskId } });
-      if (updatedTask && updatedTask.workersCompleted >= updatedTask.workersRequired) {
-        await tx.task.update({
-          where: { id: taskId },
-          data: { status: 'COMPLETED' as TaskStatus },
-        });
-        
-        this.logger.log(`Task ${taskId} auto-completed: all ${updatedTask.workersRequired} workers finished`);
-      }
-
       try {
         await this.notificationsService.createNotification({
           senderId: workerId,
@@ -178,9 +167,10 @@ export class SubmissionsService {
       throw new ConflictException('Submission has already been verified');
     }
 
-    if (task.status === 'CANCELLED' || task.status === 'COMPLETED') {
-      throw new ForbiddenException('Cannot verify a submission on a cancelled or completed task');
-    }
+    // Allow verification on COMPLETED tasks (task completes AFTER verification passes)
+    // if (task.status === 'CANCELLED' || task.status === 'COMPLETED') {
+    //   throw new ForbiddenException('Cannot verify a submission on a cancelled or completed task');
+    // }
 
     const result = await this.aiService.verifySubmission({
       taskTitle: task.title,
@@ -277,6 +267,9 @@ export class SubmissionsService {
       `AI verification for submission ${submissionId}: ${verificationStatus} (score: ${result.score})`,
     );
 
+    // Auto-complete task if all workers have been verified and passed
+    await this.checkAndAutoCompleteTask(task.id);
+
     return this.mapSubmissionResponse(updated, updated.verification);
   }
 
@@ -313,9 +306,10 @@ export class SubmissionsService {
       throw new ForbiddenException('Cannot verify your own submission');
     }
 
-    if (task.status === 'CANCELLED' || task.status === 'COMPLETED') {
-      throw new ForbiddenException('Cannot verify a submission on a cancelled or completed task');
-    }
+    // Allow verification on COMPLETED tasks (task completes AFTER verification passes)
+    // if (task.status === 'CANCELLED' || task.status === 'COMPLETED') {
+    //   throw new ForbiddenException('Cannot verify a submission on a cancelled or completed task');
+    // }
 
     const verificationStatus: VerificationStatus = dto.status === 'APPROVED' ? 'PASSED' : 'FAILED';
     const submissionStatus: SubmissionStatus = dto.status as SubmissionStatus;
@@ -416,6 +410,9 @@ export class SubmissionsService {
       `Manual verification for submission ${submissionId}: ${verificationStatus} by user ${verifierId}`,
     );
 
+    // Auto-complete task if all workers have been verified and passed
+    await this.checkAndAutoCompleteTask(task.id);
+
     return this.mapSubmissionResponse(updated, updated.verification);
   }
 
@@ -465,5 +462,41 @@ export class SubmissionsService {
           }
         : null,
     };
+  }
+
+  /**
+   * Check if all workers have submitted and been verified (passed), then auto-complete task
+   */
+  private async checkAndAutoCompleteTask(taskId: string): Promise<void> {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        submissions: {
+          include: { verification: true },
+        },
+      },
+    });
+
+    if (!task || task.status === 'COMPLETED' || task.status === 'CANCELLED') {
+      return;
+    }
+
+    // Check if all required workers have submitted
+    const allSubmitted = task.submissions.length >= task.workersRequired;
+
+    // Check if all submissions are verified and passed
+    const allVerifiedPassed = task.submissions.every(
+      (s) => s.verification && s.verification.status === 'PASSED',
+    );
+
+    if (allSubmitted && allVerifiedPassed) {
+      await this.prisma.task.update({
+        where: { id: taskId },
+        data: { status: 'COMPLETED' as TaskStatus },
+      });
+      this.logger.log(
+        `Task ${taskId} auto-completed: all ${task.workersRequired} workers verified and passed`,
+      );
+    }
   }
 }
