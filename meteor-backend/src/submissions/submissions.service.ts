@@ -5,7 +5,7 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
-import { SubmissionStatus, VerificationStatus } from '@prisma/client';
+import { SubmissionStatus, VerificationStatus, TaskStatus } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -80,6 +80,17 @@ export class SubmissionsService {
         where: { id: taskId },
         data: { workersCompleted: { increment: 1 } },
       });
+
+      // Check if all workers have completed - auto-complete task
+      const updatedTask = await tx.task.findUnique({ where: { id: taskId } });
+      if (updatedTask && updatedTask.workersCompleted >= updatedTask.workersRequired) {
+        await tx.task.update({
+          where: { id: taskId },
+          data: { status: 'COMPLETED' as TaskStatus },
+        });
+        
+        this.logger.log(`Task ${taskId} auto-completed: all ${updatedTask.workersRequired} workers finished`);
+      }
 
       try {
         await this.notificationsService.createNotification({
