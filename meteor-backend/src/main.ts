@@ -1,7 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
@@ -14,19 +13,18 @@ import { validateEnv } from './config/env.validation';
 async function bootstrap(): Promise<void> {
   validateEnv();
 
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'], // Use default NestJS logger
+  });
 
   const configService = app.get(ConfigService);
-  const logger = app.get(Logger);
-
-  app.useLogger(logger);
-
   const port = configService.get<number>('app.port', 4000);
   const apiPrefix = configService.get<string>('app.apiPrefix', 'api');
   const apiVersion = configService.get<string>('app.apiVersion', '1');
   const corsOrigin = configService.get<string>('app.corsOrigin', 'http://localhost:3000');
-
   const globalPrefix = `${apiPrefix}/v${apiVersion}`;
+
   app.setGlobalPrefix(globalPrefix, { exclude: ['health', 'health/live', 'health/ready'] });
 
   app.use(helmet());
@@ -73,9 +71,8 @@ async function bootstrap(): Promise<void> {
   }
 
   await app.listen(port);
-
-  logger.log(`Application is running on http://localhost:${port}/${globalPrefix}`);
-  logger.log(`Swagger docs available at http://localhost:${port}/docs`);
+  console.log(`Application is running on http://localhost:${port}/${globalPrefix}`);
+  console.log(`Swagger docs available at http://localhost:${port}/docs`);
 }
 
 bootstrap();

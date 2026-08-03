@@ -45,7 +45,6 @@
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
     "ioredis": "^5.11.0",
-    "nestjs-pino": "^4.6.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.0",
     "pino": "^10.3.0",

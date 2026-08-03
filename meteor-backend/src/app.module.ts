@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_PIPE, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
-import { LoggerModule } from 'nestjs-pino';
 
 import {
   appConfig,
@@ -44,15 +43,6 @@ import { AppController } from './app.controller';
         geminiConfig,
         monadConfig,
       ],
-    }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { colorize: true } }
-            : undefined,
-        level: process.env.LOG_LEVEL || 'debug',
-      },
     }),
     PrismaModule,
     RedisModule,
