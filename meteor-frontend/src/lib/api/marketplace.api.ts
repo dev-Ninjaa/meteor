@@ -4,10 +4,10 @@ import type { PaginatedResponse } from '../../types';
 
 // Backend returns wrapped responses: {statusCode, message, data: T, timestamp, path}
 export const marketplaceApi = {
-  list: (params?: QueryTasksDto) => 
+  list: (params?: QueryTasksDto & { showCompleted?: boolean }) => 
     api.get<{ statusCode: number; message: string; data: PaginatedResponse<Task>; timestamp: string; path: string }>('/marketplace', params),
 
-  search: (params?: QueryTasksDto) => 
+  search: (params?: QueryTasksDto & { showCompleted?: boolean }) => 
     api.get<{ statusCode: number; message: string; data: PaginatedResponse<Task>; timestamp: string; path: string }>('/marketplace/search', params),
 
   getTags: () => 

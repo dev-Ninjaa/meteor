@@ -8,3 +8,4 @@ export * from './useAI';
 export * from './useSocket';
 export * from './useToast';
 export * from './useDashboard';
+export * from './useDashboardAnalytics';

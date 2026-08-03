@@ -49,7 +49,7 @@ export type CreateTaskDto = {
 };
 
 export type UpdateTaskDto = Partial<CreateTaskDto>;
-export type QueryTasksDto = QueryParams & { status?: TaskStatus; tag?: string; createdBy?: string };
+export type QueryTasksDto = QueryParams & { status?: TaskStatus; tag?: string; createdBy?: string; showCompleted?: boolean };
 export type TaskListResponse = PaginatedResponse<Task>;
 
 // Frontend-compatible task type (for UI components)
