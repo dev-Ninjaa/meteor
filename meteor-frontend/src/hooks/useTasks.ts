@@ -54,10 +54,14 @@ export function useTasks(params?: QueryTasksDto) {
   return useQuery({
     queryKey: ['tasks', params],
     queryFn: () => tasksApi.list(params),
-    select: (data) => ({
-      ...data,
-      data: data.data.map(transformTask),
-    }),
+    select: (response: { data: { data: Task[]; total: number; page: number; limit: number; totalPages: number } }) => {
+      const paginatedData = response?.data;
+      if (!paginatedData) return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+      return {
+        ...paginatedData,
+        data: paginatedData.data.map(transformTask),
+      };
+    },
   });
 }
 
@@ -66,14 +70,22 @@ export function useTask(id: string) {
     queryKey: ['task', id],
     queryFn: () => tasksApi.get(id),
     enabled: !!id,
-    select: transformTask,
+    select: (response) => {
+      const data = response?.data;
+      if (!data) return null;
+      return transformTask(data);
+    },
   });
 }
 
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: tasksApi.create,
+    mutationFn: async (data: CreateTaskDto) => {
+      const response = await tasksApi.create(data);
+      // Backend returns wrapped response: {statusCode, message, data: Task}
+      return response.data;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks'] });
       qc.invalidateQueries({ queryKey: ['marketplace'] });
@@ -84,7 +96,10 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateTaskDto }) => tasksApi.update(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: UpdateTaskDto }) => {
+      const response = await tasksApi.update(id, data);
+      return response.data;
+    },
     onSuccess: (data, variables) => {
       qc.setQueryData(['task', variables.id], transformTask(data));
       qc.invalidateQueries({ queryKey: ['tasks'] });
@@ -106,7 +121,10 @@ export function useDeleteTask() {
 export function usePublishTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: tasksApi.publish,
+    mutationFn: async (id: string) => {
+      const response = await tasksApi.publish(id);
+      return response.data as any; // includes escrowData
+    },
     onSuccess: (data) => {
       qc.setQueryData(['task', data.id], transformTask(data));
       qc.invalidateQueries({ queryKey: ['tasks'] });
@@ -118,7 +136,10 @@ export function usePublishTask() {
 export function useCancelTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: tasksApi.cancel,
+    mutationFn: async (id: string) => {
+      const response = await tasksApi.cancel(id);
+      return response.data;
+    },
     onSuccess: (data) => {
       qc.setQueryData(['task', data.id], transformTask(data));
       qc.invalidateQueries({ queryKey: ['tasks'] });
@@ -129,7 +150,10 @@ export function useCancelTask() {
 export function useJoinTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: tasksApi.join,
+    mutationFn: async (id: string) => {
+      const response = await tasksApi.join(id);
+      return response.data;
+    },
     onSuccess: (_, taskId) => {
       qc.invalidateQueries({ queryKey: ['task', taskId] });
       qc.invalidateQueries({ queryKey: ['tasks'] });
@@ -140,7 +164,10 @@ export function useJoinTask() {
 export function useLeaveTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: tasksApi.leave,
+    mutationFn: async (id: string) => {
+      const response = await tasksApi.leave(id);
+      return response.data;
+    },
     onSuccess: (_, taskId) => {
       qc.invalidateQueries({ queryKey: ['task', taskId] });
       qc.invalidateQueries({ queryKey: ['tasks'] });
@@ -153,10 +180,14 @@ export function useMarketplace(params?: QueryTasksDto) {
   return useQuery({
     queryKey: ['marketplace', params],
     queryFn: () => marketplaceApi.list(params),
-    select: (data) => ({
-      ...data,
-      data: data.data.map(transformTask),
-    }),
+    select: (response: { data: { data: Task[]; total: number; page: number; limit: number; totalPages: number } }) => {
+      const paginatedData = response?.data;
+      if (!paginatedData) return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+      return {
+        ...paginatedData,
+        data: paginatedData.data.map(transformTask),
+      };
+    },
   });
 }
 
@@ -164,10 +195,14 @@ export function useSearchMarketplace(params?: QueryTasksDto) {
   return useQuery({
     queryKey: ['marketplace', 'search', params],
     queryFn: () => marketplaceApi.search(params),
-    select: (data) => ({
-      ...data,
-      data: data.data.map(transformTask),
-    }),
+    select: (response: { data: { data: Task[]; total: number; page: number; limit: number; totalPages: number } }) => {
+      const paginatedData = response?.data;
+      if (!paginatedData) return { data: [], total: 0, page: 1, limit: 20, totalPages: 0 };
+      return {
+        ...paginatedData,
+        data: paginatedData.data.map(transformTask),
+      };
+    },
   });
 }
 

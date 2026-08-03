@@ -6,7 +6,10 @@ import type { CreateSubmissionDto, ManualVerifyDto, Submission } from '../types'
 export function useSubmissionsByTask(taskId: string) {
   return useQuery({
     queryKey: ['submissions', 'task', taskId],
-    queryFn: () => submissionsApi.listByTask(taskId),
+    queryFn: async () => {
+      const response = await submissionsApi.listByTask(taskId);
+      return response.data;
+    },
     enabled: !!taskId,
   });
 }
@@ -14,7 +17,10 @@ export function useSubmissionsByTask(taskId: string) {
 export function useSubmission(id: string) {
   return useQuery({
     queryKey: ['submission', id],
-    queryFn: () => submissionsApi.get(id),
+    queryFn: async () => {
+      const response = await submissionsApi.get(id);
+      return response.data;
+    },
     enabled: !!id,
   });
 }
@@ -25,6 +31,8 @@ export function useCreateSubmission() {
     mutationFn: ({ taskId, data }: { taskId: string; data: CreateSubmissionDto }) => 
       submissionsApi.create(taskId, data),
     onSuccess: (data, variables) => {
+      // Backend returns wrapped response: {statusCode, message, data: Submission}
+      const submission = data.data;
       qc.invalidateQueries({ queryKey: ['submissions', 'task', variables.taskId] });
       qc.invalidateQueries({ queryKey: ['task', variables.taskId] });
     },
@@ -36,8 +44,9 @@ export function useVerifySubmissionAi() {
   return useMutation({
     mutationFn: submissionsApi.verifyAi,
     onSuccess: (data) => {
-      qc.setQueryData(['submission', data.id], data);
-      qc.invalidateQueries({ queryKey: ['submissions', 'task', data.taskId] });
+      const submission = data.data;
+      qc.setQueryData(['submission', submission.id], submission);
+      qc.invalidateQueries({ queryKey: ['submissions', 'task', submission.taskId] });
     },
   });
 }
@@ -48,8 +57,9 @@ export function useVerifySubmissionManual() {
     mutationFn: ({ submissionId, data }: { submissionId: string; data: ManualVerifyDto }) => 
       submissionsApi.verifyManual(submissionId, data),
     onSuccess: (data) => {
-      qc.setQueryData(['submission', data.id], data);
-      qc.invalidateQueries({ queryKey: ['submissions', 'task', data.taskId] });
+      const submission = data.data;
+      qc.setQueryData(['submission', submission.id], submission);
+      qc.invalidateQueries({ queryKey: ['submissions', 'task', submission.taskId] });
     },
   });
 }
@@ -57,7 +67,10 @@ export function useVerifySubmissionManual() {
 export function useVerification(submissionId: string) {
   return useQuery({
     queryKey: ['verification', submissionId],
-    queryFn: () => submissionsApi.getVerification(submissionId),
+    queryFn: async () => {
+      const response = await submissionsApi.getVerification(submissionId);
+      return response.data.verification;
+    },
     enabled: !!submissionId,
   });
 }

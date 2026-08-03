@@ -6,14 +6,22 @@ import type { CreateEscrowDto, ReleaseEscrowDto, RefundEscrowDto, QueryTransacti
 export function useTransactions(params?: QueryTransactionsDto) {
   return useQuery({
     queryKey: ['transactions', params],
-    queryFn: () => paymentsApi.list(params),
+    queryFn: async () => {
+      const response = await paymentsApi.list(params);
+      // Backend returns wrapped response: {statusCode, message, data: PaginatedResponse<Transaction>}
+      return response.data;
+    },
   });
 }
 
 export function useTransaction(id: string) {
   return useQuery({
     queryKey: ['transaction', id],
-    queryFn: () => paymentsApi.get(id),
+    queryFn: async () => {
+      const response = await paymentsApi.get(id);
+      // Backend returns wrapped response: {statusCode, message, data: Transaction}
+      return response.data;
+    },
     enabled: !!id,
   });
 }
@@ -21,8 +29,12 @@ export function useTransaction(id: string) {
 export function useCreateEscrow() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: paymentsApi.createEscrow,
-    onSuccess: (data) => {
+    mutationFn: async (data: CreateEscrowDto) => {
+      const response = await paymentsApi.createEscrow(data);
+      // Backend returns wrapped response: {statusCode, message, data: Transaction}
+      return response.data;
+    },
+    onSuccess: (data: Transaction) => {
       qc.invalidateQueries({ queryKey: ['transactions'] });
       qc.invalidateQueries({ queryKey: ['task', data.taskId] });
     },
@@ -32,8 +44,12 @@ export function useCreateEscrow() {
 export function useReleaseEscrow() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: paymentsApi.releaseEscrow,
-    onSuccess: (data) => {
+    mutationFn: async (data: ReleaseEscrowDto) => {
+      const response = await paymentsApi.releaseEscrow(data);
+      // Backend returns wrapped response: {statusCode, message, data: Transaction}
+      return response.data;
+    },
+    onSuccess: (data: Transaction) => {
       qc.invalidateQueries({ queryKey: ['transactions'] });
       qc.invalidateQueries({ queryKey: ['task', data.taskId] });
     },
@@ -43,8 +59,12 @@ export function useReleaseEscrow() {
 export function useRefundEscrow() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: paymentsApi.refundEscrow,
-    onSuccess: (data) => {
+    mutationFn: async (data: RefundEscrowDto) => {
+      const response = await paymentsApi.refundEscrow(data);
+      // Backend returns wrapped response: {statusCode, message, data: Transaction}
+      return response.data;
+    },
+    onSuccess: (data: Transaction) => {
       qc.invalidateQueries({ queryKey: ['transactions'] });
       qc.invalidateQueries({ queryKey: ['task', data.taskId] });
     },

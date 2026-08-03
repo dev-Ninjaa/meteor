@@ -2,22 +2,34 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authApi, api } from '../lib/api';
 import type { Address } from '../types/base';
+import type { AuthResponse, User } from '../types/user';
 
 export function useAuth() {
   const queryClient = useQueryClient();
 
   const login = useMutation({
-    mutationFn: async ({ address, signature, nonce }: { address: string; signature: string; nonce: string }) => {
-      return authApi.verify({ address: address as Address, signature, nonce });
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData(['user', 'me'], data.user);
+      mutationFn: async ({ walletAddress, signature, nonce }: { walletAddress: string; signature: string; nonce?: string }) => {
+        // Backend's verify endpoint expects walletAddress and signature
+        // The nonce is stored in DB when /auth/nonce is called
+        // Don't send nonce - backend reads it from DB
+        return authApi.verify({ address: walletAddress as Address, signature });
+      },
+    onSuccess: (data: AuthResponse) => {
+      // Backend returns wrapped response: {statusCode, message, data: {user, accessToken, refreshToken}}
+      const authData = data?.data;
+      const user = authData?.user;
+      const accessToken = authData?.accessToken;
+      const refreshToken = authData?.refreshToken;
+      
+      queryClient.setQueryData(['user', 'me'], user);
       // Store token for socket connection
       if (typeof window !== 'undefined') {
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
+        console.log('[useAuth] Storing tokens:', { accessToken: accessToken?.slice(0, 20) + '...', refreshToken: refreshToken?.slice(0, 20) + '...' });
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
         // IMPORTANT: Set token on api client
-        api.setToken(data.accessToken);
+        api.setToken(accessToken);
+        console.log('[useAuth] Token set on api client, localStorage:', localStorage.getItem('accessToken')?.slice(0, 20) + '...');
       }
     },
   });
@@ -57,7 +69,11 @@ export function useAuth() {
 export function useMe() {
   return useQuery({
     queryKey: ['user', 'me'],
-    queryFn: authApi.me,
+    queryFn: async () => {
+      const response = await authApi.me();
+      // Backend returns wrapped response: {statusCode, message, data: User}
+      return response.data;
+    },
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -67,7 +83,9 @@ export function useUpdateMe() {
   return useMutation({
     mutationFn: authApi.updateMe,
     onSuccess: (data) => {
-      queryClient.setQueryData(['user', 'me'], data);
+      // Backend returns wrapped response: {statusCode, message, data: User}
+      const userData = data?.data;
+      queryClient.setQueryData(['user', 'me'], userData);
     },
   });
 }
