@@ -22,6 +22,8 @@ import {
   AlertCircle,
   RefreshCw,
   Plus,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { CreateTaskModal } from '../../components/marketplace/CreateTaskModal';
@@ -30,7 +32,8 @@ import { TaskDetailModal } from '../../components/marketplace/TaskDetailModal';
 import { ManualVerificationModal } from '../../components/marketplace/ManualVerificationModal';
 
 export const MarketplaceView: React.FC = () => {
-  const { data: tasksResponse, isLoading, error, refetch } = useMarketplace();
+  const [showCompleted, setShowCompleted] = useState(false);
+  const { data: tasksResponse, isLoading, error, refetch } = useMarketplace({ showCompleted });
   const { data: tagsData } = useMarketplaceTags();
   const { selectedTask, isDetailModalOpen, isSolveModalOpen, isCreateModalOpen, setSelectedTask, setIsDetailModalOpen, setIsSolveModalOpen, setIsCreateModalOpen } = useAppStore();
   const { toast } = useToast();
@@ -39,6 +42,11 @@ export const MarketplaceView: React.FC = () => {
   const [selectedVerification, setSelectedVerification] = useState<string>('All');
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState<'newest' | 'reward' | 'progress'>('newest');
+
+  // Re-fetch when showCompleted changes
+  useEffect(() => {
+    refetch();
+  }, [showCompleted, refetch]);
 
   const tasks = tasksResponse?.data || [];
   const tags = tagsData?.data || [];
@@ -138,6 +146,27 @@ export const MarketplaceView: React.FC = () => {
                   <Plus className="w-4 h-4" />
                   <span>Create Task</span>
                 </button>
+                {/* Show Completed Toggle */}
+                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-[#111113] border border-white/10">
+                  <span className="text-xs font-mono text-white/60">Show Completed</span>
+                  <button
+                    onClick={() => setShowCompleted(!showCompleted)}
+                    className={`relative w-12 h-6 rounded-full transition-all flex items-center p-1 ${
+                      showCompleted
+                        ? 'bg-[#836EF9] shadow-lg shadow-[#836EF9]/30'
+                        : 'bg-white/10'
+                    }`}
+                    aria-label={showCompleted ? 'Hide completed tasks' : 'Show completed tasks'}
+                  >
+                    <motion.div
+                      initial={{ x: showCompleted ? 22 : 2 }}
+                      animate={{ x: showCompleted ? 22 : 2 }}
+                      className="w-4 h-4 rounded-full bg-white shadow-md"
+                    >
+                      {showCompleted ? <ToggleLeft className="w-4 h-4 text-[#836EF9]" /> : <ToggleRight className="w-4 h-4 text-white/60" />}
+                    </motion.div>
+                  </button>
+                </div>
               </div>
             </div>
             <h1 className="font-heading italic text-4xl sm:text-6xl text-white tracking-tight leading-tight">
@@ -254,7 +283,7 @@ export const MarketplaceView: React.FC = () => {
 
             {sortedTasks.length === 0 && (
               <div className="col-span-full text-center py-20 text-white/40 font-mono text-xs">
-                No active swarm tasks match your current filter parameters.
+                No active tasks match your current filter parameters.
               </div>
             )}
           </motion.div>

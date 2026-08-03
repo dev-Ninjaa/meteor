@@ -16,16 +16,45 @@ export const WalletView: React.FC = () => {
   const { toast } = useToast();
 
   const pendingRewardsDisplay = pendingRewards?.toFixed(1) || '0.0';
-    const monBalance = balance ? parseFloat(formatEther(balance.value)).toFixed(2) : '0.00';
+  const monBalance = balance ? parseFloat(formatEther(balance.value)).toFixed(2) : '0.00';
 
-    // Show toast on error but don't block UI - only show once per error
-    const errorToastShown = useRef(false);
-    React.useEffect(() => {
-      // The usePayments hook would need to expose error state
-      // For now we rely on the query's internal error handling
-    }, []);
+  // Show toast on error but don't block UI - only show once per error
+  const errorToastShown = useRef(false);
+  React.useEffect(() => {
+    // The usePayments hook would need to expose error state
+    // For now we rely on the query's internal error handling
+  }, []);
 
-    return (
+  // Determine if transaction is incoming (earning) or outgoing (spending) for current user
+  const getTransactionSign = (tx: any, userAddress: string) => {
+    const type = tx.type || 'UNKNOWN';
+    // Incoming: worker receives payment, creator gets refund
+    if (type === 'CLAIM_PAYMENT' || type === 'ESCROW_RELEASE' || type === 'ESCROW_REFUND') {
+      return tx.userId.toLowerCase() === userAddress.toLowerCase();
+    }
+    // Outgoing: creator locks escrow
+    if (type === 'ESCROW_CREATE') {
+      return tx.userId.toLowerCase() === userAddress.toLowerCase(); // creator spends
+    }
+    // For unknown types, try to infer from userId match
+    return tx.userId.toLowerCase() === userAddress.toLowerCase();
+  };
+
+  const formatAmount = (tx: any, userAddress: string) => {
+    const amount = parseFloat(tx.amount);
+    const isIncoming = getTransactionSign(tx, userAddress);
+    const sign = isIncoming ? '+' : '-';
+    return `${sign}${amount.toFixed(1)} MON`;
+  };
+
+  const formatAmountColor = (tx: any, userAddress: string) => {
+    const isIncoming = getTransactionSign(tx, userAddress);
+    return isIncoming ? 'text-emerald-400' : 'text-red-400';
+  };
+
+  const userAddr = wagmiAddress || '';
+
+  return (
     <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 overflow-hidden">
       {/* Background Video (full bleed) with custom JS crossfade */}
       <FadingVideo
@@ -145,7 +174,7 @@ export const WalletView: React.FC = () => {
               </div>
             ) : (
               transactions.map((tx: any) => {
-                const isPositive = tx.amount.startsWith('+') || !tx.amount.startsWith('-');
+                const isIncoming = getTransactionSign(tx, userAddr);
                 return (
                   <div
                     key={tx.id}
@@ -154,12 +183,12 @@ export const WalletView: React.FC = () => {
                     <div className="flex items-center gap-3.5">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center border ${
-                          isPositive
+                          isIncoming
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                         }`}
                       >
-                        {isPositive ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                        {isIncoming ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
                       </div>
 
                       <div>
@@ -176,8 +205,8 @@ export const WalletView: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className={`font-mono text-sm font-bold ${isPositive ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {tx.amount}
+                    <div className={formatAmountColor(tx, userAddr)}>
+                      {formatAmount(tx, userAddr)}
                     </div>
                   </div>
                 );

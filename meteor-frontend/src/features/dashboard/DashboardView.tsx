@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useDashboardCreated, useDashboardSubmitted, useDashboardJoined } from '@/hooks/useDashboard';
+import { useDashboardAnalytics } from '@/hooks/useDashboardAnalytics';
 import { useAppStore } from '../../store/useAppStore';
 import { TaskItem, TaskStatus, TaskCategory, VerificationType } from '../../types';
 import { motion } from 'framer-motion';
@@ -18,6 +19,9 @@ import {
   ArrowUpRight,
   TrendingUp,
   AlertCircle,
+  Wallet,
+  Coins,
+  Award,
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 
@@ -25,36 +29,37 @@ export const DashboardView: React.FC = () => {
   const { data: createdData } = useDashboardCreated();
   const { data: submittedData } = useDashboardSubmitted();
   const { data: joinedData } = useDashboardJoined();
+  const analytics = useDashboardAnalytics();
   const { setSelectedTask, setIsSolveModalOpen, setIsCreateModalOpen, setIsDetailModalOpen } = useAppStore();
-    const { toast } = useToast();
-    const [activeTab, setActiveTab] = useState<'created' | 'in_progress' | 'closed' | 'analytics'>('in_progress');
-    const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'IN_PROGRESS' | 'VERIFIED' | 'COMPLETED' | 'CANCELLED'>('ALL');
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<'created' | 'in_progress' | 'closed' | 'analytics'>('in_progress');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'IN_PROGRESS' | 'VERIFIED' | 'COMPLETED' | 'CANCELLED'>('ALL');
 
   // Get tasks for active tab
-      const getTasksForTab = () => {
-        switch (activeTab) {
-          case 'created':
-            return createdData?.data || [];
-          case 'in_progress':
-            // In progress = submitted + joined (tasks I'm working on)
-            // Deduplicate by task ID since a task can appear in both submitted and joined
-            const submitted = submittedData?.data || [];
-            const joined = joinedData?.data || [];
-            const combined = [...submitted, ...joined];
-            const seen = new Set();
-            return combined.filter((task: any) => {
-              if (seen.has(task.id)) return false;
-              seen.add(task.id);
-              return true;
-            });
-          case 'closed':
-            return submittedData?.data?.filter((t: any) => t.status === 'COMPLETED' || t.status === 'CANCELLED') || [];
-          case 'analytics':
-            return [];
-          default:
-            return [];
-        }
-      };
+  const getTasksForTab = () => {
+    switch (activeTab) {
+      case 'created':
+        return createdData?.data || [];
+      case 'in_progress':
+        // In progress = submitted + joined (tasks I'm working on)
+        // Deduplicate by task ID since a task can appear in both submitted and joined
+        const submitted = submittedData?.data || [];
+        const joined = joinedData?.data || [];
+        const combined = [...submitted, ...joined];
+        const seen = new Set();
+        return combined.filter((task: any) => {
+          if (seen.has(task.id)) return false;
+          seen.add(task.id);
+          return true;
+        });
+      case 'closed':
+        return submittedData?.data?.filter((t: any) => t.status === 'COMPLETED' || t.status === 'CANCELLED') || [];
+      case 'analytics':
+        return [];
+      default:
+        return [];
+    }
+  };
 
   const tasks = getTasksForTab();
   const isLoading = createdData === undefined || submittedData === undefined || joinedData === undefined;
@@ -72,31 +77,31 @@ export const DashboardView: React.FC = () => {
   });
 
   const handleTaskClick = (task: any) => {
-        setSelectedTask(task);
-    
-        // Different behavior based on active tab
-        switch (activeTab) {
-          case 'created':
-            // For created tasks, show task detail view with submissions management
-            setIsDetailModalOpen(true);
-            break;
-          case 'in_progress':
-            // In progress = submitted + joined
-            // If task has mySubmission -> show detail, else show solve modal
-            if (task.mySubmission) {
-              setIsDetailModalOpen(true);
-            } else {
-              setIsSolveModalOpen(true);
-            }
-            break;
-          case 'closed':
-            // Closed tasks - show detail
-            setIsDetailModalOpen(true);
-            break;
-          default:
-            setIsSolveModalOpen(true);
+    setSelectedTask(task);
+
+    // Different behavior based on active tab
+    switch (activeTab) {
+      case 'created':
+        // For created tasks, show task detail view with submissions management
+        setIsDetailModalOpen(true);
+        break;
+      case 'in_progress':
+        // In progress = submitted + joined
+        // If task has mySubmission -> show detail, else show solve modal
+        if (task.mySubmission) {
+          setIsDetailModalOpen(true);
+        } else {
+          setIsSolveModalOpen(true);
         }
-      };
+        break;
+      case 'closed':
+        // Closed tasks - show detail
+        setIsDetailModalOpen(true);
+        break;
+      default:
+        setIsSolveModalOpen(true);
+    }
+  };
 
   // Creator analytics metrics
   const totalTasks = createdData?.total || 0;
@@ -167,48 +172,48 @@ export const DashboardView: React.FC = () => {
           </div>
 
           {/* Navigation Sub-Toggle - Created, In Progress, Closed, Analytics */}
-                              <div className="flex items-center gap-1 liquid-glass rounded-full p-1 border border-white/10 bg-black/40">
-                                <button
-                                  onClick={() => setActiveTab('created')}
-                                  className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
-                                    activeTab === 'created'
-                                      ? 'bg-white text-black font-semibold shadow-lg'
-                                      : 'text-white/70 hover:text-white'
-                                  }`}
-                                >
-                                  Created
-                                </button>
-                                <button
-                                  onClick={() => setActiveTab('in_progress')}
-                                  className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
-                                    activeTab === 'in_progress'
-                                      ? 'bg-white text-black font-semibold shadow-lg'
-                                      : 'text-white/70 hover:text-white'
-                                  }`}
-                                >
-                                  In Progress
-                                </button>
-                                <button
-                                  onClick={() => setActiveTab('closed')}
-                                  className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
-                                    activeTab === 'closed'
-                                      ? 'bg-white text-black font-semibold shadow-lg'
-                                      : 'text-white/70 hover:text-white'
-                                  }`}
-                                >
-                                  Closed
-                                </button>
-                                <button
-                                  onClick={() => setActiveTab('analytics')}
-                                  className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
-                                    activeTab === 'analytics'
-                                      ? 'bg-white text-black font-semibold shadow-lg'
-                                      : 'text-white/70 hover:text-white'
-                                  }`}
-                                >
-                                  Creator AI Analytics
-                                </button>
-                              </div>
+          <div className="flex items-center gap-1 liquid-glass rounded-full p-1 border border-white/10 bg-black/40">
+            <button
+              onClick={() => setActiveTab('created')}
+              className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
+                activeTab === 'created'
+                  ? 'bg-white text-black font-semibold shadow-lg'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Created
+            </button>
+            <button
+              onClick={() => setActiveTab('in_progress')}
+              className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
+                activeTab === 'in_progress'
+                  ? 'bg-white text-black font-semibold shadow-lg'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              In Progress
+            </button>
+            <button
+              onClick={() => setActiveTab('closed')}
+              className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
+                activeTab === 'closed'
+                  ? 'bg-white text-black font-semibold shadow-lg'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Closed
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
+                activeTab === 'analytics'
+                  ? 'bg-white text-black font-semibold shadow-lg'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              Creator AI Analytics
+            </button>
+          </div>
         </motion.div>
 
         {activeTab !== 'analytics' && (
@@ -293,11 +298,24 @@ export const DashboardView: React.FC = () => {
 
         {activeTab === 'analytics' && (
           <div>
+            {/* Wallet Overview */}
+            <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-heading italic text-xl text-white">Wallet Overview</h3>
+                <div className="flex items-center gap-2 text-xs font-mono text-white/60">
+                  <Wallet className="w-4 h-4" />
+                  <span>{analytics.address}</span>
+                  <span className="text-emerald-400">● Connected</span>
+                </div>
+              </div>
+              <div className="text-4xl font-mono font-bold text-emerald-400 mb-2">{analytics.balance} MON</div>
+            </div>
+
             {/* Creator AI Analytics Overview Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
               <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40">
                 <div className="text-xs font-mono text-white/50 mb-1">Total Tasks Created</div>
-                <div className="text-3xl font-mono font-bold text-white">{totalTasks}</div>
+                <div className="text-3xl font-mono font-bold text-white">{analytics.totalTasksCreated}</div>
                 <div className="text-[10px] font-mono text-emerald-400 mt-2 flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" /> 100% On-Chain Escrowed
                 </div>
@@ -305,20 +323,47 @@ export const DashboardView: React.FC = () => {
 
               <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40">
                 <div className="text-xs font-mono text-white/50 mb-1">Total MON Spent</div>
-                <div className="text-3xl font-mono font-bold text-[#836EF9]">{totalSpent} MON</div>
+                <div className="text-3xl font-mono font-bold text-[#836EF9]">{analytics.totalSpent} MON</div>
                 <div className="text-[10px] font-mono text-white/40 mt-2">Monad Testnet Settlement</div>
               </div>
 
               <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40">
-                <div className="text-xs font-mono text-white/50 mb-1">Swarm Consensus Score</div>
-                <div className="text-3xl font-mono font-bold text-emerald-400">{avgConsensus}%</div>
-                <div className="text-[10px] font-mono text-emerald-400 mt-2">High Agreement Velocity</div>
+                <div className="text-xs font-mono text-white/50 mb-1">Total MON Earned</div>
+                <div className="text-3xl font-mono font-bold text-emerald-400">{analytics.totalEarned} MON</div>
+                <div className="text-[10px] font-mono text-emerald-400 mt-2">From Completed Tasks</div>
               </div>
 
               <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40">
-                <div className="text-xs font-mono text-white/50 mb-1">Avg Completion Speed</div>
-                <div className="text-3xl font-mono font-bold text-white">4.2 mins</div>
-                <div className="text-[10px] font-mono text-white/40 mt-2">Sub-second AI Verification</div>
+                <div className="text-xs font-mono text-white/50 mb-1">Swarm Consensus Score</div>
+                <div className="text-3xl font-mono font-bold text-emerald-400">{analytics.avgConsensus}%</div>
+                <div className="text-[10px] font-mono text-emerald-400 mt-2">{analytics.consensusCount} verifications</div>
+              </div>
+            </div>
+
+            {/* Financial Breakdown */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+              <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40">
+                <div className="text-xs font-mono text-white/50 mb-1">Escrow Locked</div>
+                <div className="text-3xl font-mono font-bold text-[#836EF9]">{analytics.totalEscrowLocked} MON</div>
+                <div className="text-[10px] font-mono text-white/40 mt-2">Pending Worker Joins</div>
+              </div>
+
+              <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40">
+                <div className="text-xs font-mono text-white/50 mb-1">Total Claimed</div>
+                <div className="text-3xl font-mono font-bold text-emerald-400">{analytics.totalClaimed} MON</div>
+                <div className="text-[10px] font-mono text-emerald-400 mt-2">Worker Payouts</div>
+              </div>
+
+              <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40">
+                <div className="text-xs font-mono text-white/50 mb-1">Pending Rewards</div>
+                <div className="text-3xl font-mono font-bold text-amber-400">{analytics.pendingRewards} MON</div>
+                <div className="text-[10px] font-mono text-amber-400 mt-2">Awaiting Verification</div>
+              </div>
+
+              <div className="liquid-glass rounded-3xl p-6 border border-white/10 backdrop-blur-xl bg-black/40">
+                <div className="text-xs font-mono text-white/50 mb-1">Tasks Joined</div>
+                <div className="text-3xl font-mono font-bold text-white">{analytics.totalTasksJoined}</div>
+                <div className="text-[10px] font-mono text-white/40 mt-2">Active Worker Tasks</div>
               </div>
             </div>
 
