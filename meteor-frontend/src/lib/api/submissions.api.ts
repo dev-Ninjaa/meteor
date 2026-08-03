@@ -3,20 +3,20 @@ import type { Submission, CreateSubmissionDto, ManualVerifyDto, Verification, Ai
 
 export const submissionsApi = {
   listByTask: (taskId: string) => 
-    api.get<Submission[]>(`/submissions/task/${taskId}`),
+    api.get<{ statusCode: number; message: string; data: Submission[]; timestamp: string; path: string }>(`/tasks/${taskId}/submissions`),
 
   get: (id: string) => 
-    api.get<Submission>(`/submissions/${id}`),
+    api.get<{ statusCode: number; message: string; data: Submission; timestamp: string; path: string }>(`/submissions/${id}`),
 
   create: (taskId: string, data: CreateSubmissionDto) => 
-    api.post<Submission>('/submissions', { taskId, ...data }),
+    api.post<{ statusCode: number; message: string; data: Submission; timestamp: string; path: string }>(`/tasks/${taskId}/submissions`, data),
 
   verifyAi: (submissionId: string) => 
-    api.post<Submission>(`/submissions/${submissionId}/verify/ai`),
+    api.post<{ statusCode: number; message: string; data: Submission; timestamp: string; path: string }>(`/submissions/${submissionId}/verify/ai`),
 
   verifyManual: (submissionId: string, data: ManualVerifyDto) => 
-    api.post<Submission>(`/submissions/${submissionId}/verify/manual`, data),
+    api.post<{ statusCode: number; message: string; data: Submission; timestamp: string; path: string }>(`/submissions/${submissionId}/verify/manual`, data),
 
   getVerification: (submissionId: string) => 
-    api.get<{ verification: Verification }>(`/submissions/${submissionId}/verification`),
+    api.get<{ statusCode: number; message: string; data: { verification: Verification }; timestamp: string; path: string }>(`/submissions/${submissionId}/verification`),
 };

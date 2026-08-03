@@ -7,4 +7,4 @@ export * from './submissions.api';
 export * from './payments.api';
 export * from './notifications.api';
 export * from './ai.api';
-export * from './wallet.api';
+export * from './dashboard.api';
