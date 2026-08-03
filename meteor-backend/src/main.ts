@@ -9,6 +9,7 @@ import rateLimit from 'express-rate-limit';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { validateEnv } from './config/env.validation';
+import { isAllowedCorsOrigin } from './common/utils/cors';
 
 async function bootstrap(): Promise<void> {
   validateEnv();
@@ -32,7 +33,14 @@ async function bootstrap(): Promise<void> {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: corsOrigin,
+    origin: (origin, callback) => {
+      if (!origin || isAllowedCorsOrigin(origin, corsOrigin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

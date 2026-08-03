@@ -18,10 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    const secret = configService.get<string>(
-      'jwt.secret',
-      'super-secret-jwt-key-change-in-production',
-    );
+    const secret = configService.get<string>('jwt.secret', '');
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
