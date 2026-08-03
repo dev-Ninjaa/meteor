@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useSubmissions, usePayments } from '@/hooks';
 import { useAppStore } from '../../store/useAppStore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,55 +6,77 @@ import { X, ShieldCheck, Zap, Send, RefreshCw } from 'lucide-react';
 import { VerificationBadge } from '../shared/VerificationBadge';
 import { SubmissionRenderer } from '../shared/SubmissionRenderer';
 import { VerificationLiveStatus } from '../shared/VerificationLiveStatus';
+import { useWriteBountyEscrowClaimPayment } from '@/lib/generated';
+import { useAccount } from 'wagmi';
 
 export const InteractiveSolverModal: React.FC = () => {
   const { selectedTask, isSolveModalOpen, setIsSolveModalOpen } = useAppStore();
   const { create: createSubmission, verifyAi: verifyAiSubmission } = useSubmissions();
-  const { releaseEscrow } = usePayments();
+  const { address } = useAccount();
+  const { writeContractAsync: claimPayment } = useWriteBountyEscrowClaimPayment();
   const [submission, setSubmission] = useState<string>('');
   const [isLiveVerifying, setIsLiveVerifying] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
 
   if (!isSolveModalOpen || !selectedTask) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting || !submission.trim()) return;
-    
+
     setIsSubmitting(true);
     try {
       // Create submission
-      const newSubmission = await createSubmission.mutateAsync({
+      const newSubmissionResponse = await createSubmission.mutateAsync({
         taskId: selectedTask.id,
         data: {
           content: submission,
           proof: undefined,
         },
       });
-      
+      const newSubmission = newSubmissionResponse.data;
+
       // If AI verification, trigger it
       if (selectedTask.verificationType === 'AI Verification' || selectedTask.verificationType === 'Hybrid') {
         setIsLiveVerifying(true);
         await verifyAiSubmission.mutateAsync(newSubmission.id);
+        setIsLiveVerifying(false);
       }
-      
-      // If auto-pay, release escrow
-      if (selectedTask.verificationType === 'AI Verification' || selectedTask.verificationType === 'Hybrid') {
-        await releaseEscrow.mutateAsync({
-          taskId: selectedTask.id,
-          submissionId: newSubmission.id,
-        });
+
+      // For AI-verified tasks, auto-claim after verification passes
+      // For manual/hybrid, worker claims manually after verification
+      if (selectedTask.verificationType === 'AI Verification') {
+        await claimWorkerPayment(selectedTask.id, newSubmission.id);
       }
-      
-      setIsLiveVerifying(false);
+
       setIsSolveModalOpen(false);
       setSubmission('');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submission failed:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const claimWorkerPayment = async (taskId: string, submissionId: string) => {
+      if (!address) return;
+   
+      setIsClaiming(true);
+      try {
+        // Convert UUID to bytes32 for contract
+        const { keccak256, toHex } = await import('viem');
+        const taskIdBytes32 = keccak256(toHex(taskId));
+        const txHash = await claimPayment({
+          args: [taskIdBytes32 as `0x${string}`],
+        });
+        console.log('Worker claimed payment:', txHash);
+      } catch (err) {
+        console.error('Claim payment failed:', err);
+      } finally {
+        setIsClaiming(false);
+      }
+    };
 
   return (
     <AnimatePresence>
@@ -135,7 +157,7 @@ export const InteractiveSolverModal: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        <Send className="w-3.5 h-3.5 text-[#836EF9]" />
+                        <Send className="w-3.5 h-3.5" />
                         <span>Submit & Claim {selectedTask.reward}</span>
                       </>
                     )}
