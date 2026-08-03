@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTask, useJoinTask, useCreateSubmission, useMarketplace } from '@/hooks';
 import { formatAddress } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -8,12 +8,12 @@ import { ProgressIndicator } from '@/components/shared/ProgressIndicator';
 import { SubmissionRenderer } from '@/components/shared/SubmissionRenderer';
 import { VerificationLiveStatus } from '@/components/shared/VerificationLiveStatus';
 import { WalletConnectButton } from '@/components/ui/WalletConnectButton';
-import {
-  ArrowLeft, CheckCircle2, Clock, Zap, Users, AlertCircle,
-  Send, FileText, Image, Video, MapPin, Mic, ExternalLink,
-  Loader2, ShieldCheck, X, ChevronDown, ChevronUp
-} from 'lucide-react';
+import { useWriteBountyEscrowClaimPayment } from '@/lib/generated';
+import { useAccount } from 'wagmi';
 import { cn } from '@/lib/utils';
+import { ArrowLeft, CheckCircle2, Clock, Zap, Users, AlertCircle,
+  Send, FileText, Image, Video, MapPin, Mic, ExternalLink,
+  Loader2, ShieldCheck, X, ChevronDown, ChevronUp, DollarSign, Wallet, ArrowDown } from 'lucide-react';
 
 interface TaskDetailViewProps {
   taskId: string;
@@ -39,6 +39,8 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onBack }
   const { data: task, isLoading, error, refetch } = useTask(taskId);
   const joinMutation = useJoinTask();
   const submitMutation = useCreateSubmission();
+  const { address } = useAccount();
+  const { writeContractAsync: claimPayment } = useWriteBountyEscrowClaimPayment();
   
   const [activeTab, setActiveTab] = useState<'overview' | 'submissions' | 'verify'>('overview');
   const [showSubmitModal, setShowSubmitModal] = useState(false);
@@ -47,6 +49,46 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onBack }
   const [selectedOption, setSelectedOption] = useState<string>('');
   const [rating, setRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [mySubmission, setMySubmission] = useState<{
+    id: string;
+    status: string;
+    verified: boolean;
+    claimed: boolean;
+    content: string;
+    createdAt: string;
+  } | null>(null);
+
+  // Fetch worker's submission for this task
+  useEffect(() => {
+    if (task && address) {
+      // In a real app, you'd call an API to get the current user's submission
+      // For now we'll check if the worker has joined and has submissions
+      // This would be replaced with actual API call
+    }
+  }, [task, address]);
+
+  const claimWorkerPayment = async () => {
+    if (!address || !task) return;
+    
+    setIsClaiming(true);
+    try {
+      // Convert UUID to bytes32 for contract
+      const { keccak256, toHex } = await import('viem');
+      const taskIdBytes32 = keccak256(toHex(task.id));
+      const txHash = await claimPayment({
+        args: [taskIdBytes32 as `0x${string}`],
+      });
+      console.log('Worker claimed payment:', txHash);
+      alert('Payment claimed successfully!');
+      refetch();
+    } catch (err) {
+      console.error('Claim payment failed:', err);
+      alert('Failed to claim payment. Please try again.');
+    } finally {
+      setIsClaiming(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -79,7 +121,11 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onBack }
 
   const isJoined = task.workersJoined > 0 && task.status !== 'OPEN';
   const canSubmit = isJoined && (task.status === 'OPEN' || task.status === 'IN_PROGRESS');
-  const isCompleted = task.status === 'COMPLETED' || task.workersCompleted >= task.workersRequired;
+  const isFullyCompleted = task.status === 'COMPLETED' || task.workersCompleted >= task.workersRequired;
+  const hasSubmitted = isJoined && task.workersCompleted > 0;
+  const escrowLocked = task.escrowStatus === 'LOCKED';
+  const canClaim = hasSubmitted && escrowLocked; // Can claim if submitted AND escrow locked (regardless of completion)
+  const hasClaimed = isJoined && task.workersCompleted >= task.workersRequired && task.status === 'COMPLETED';
 
   const handleJoin = async () => {
     try {
@@ -256,7 +302,7 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onBack }
             </button>
           )}
 
-          {isJoined && canSubmit && !isCompleted && (
+          {isJoined && canSubmit && !isFullyCompleted && (
             <button
               onClick={() => setShowSubmitModal(true)}
               className="flex-1 bg-[#836EF9] text-white font-semibold py-3 rounded-2xl hover:bg-[#836EF9]/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#836EF9]/30"
@@ -266,7 +312,26 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onBack }
             </button>
           )}
 
-          {isCompleted && (
+          {canClaim && !hasClaimed && (
+            <button
+              onClick={claimWorkerPayment}
+              disabled={isClaiming}
+              className="flex-1 bg-emerald-500 text-white font-semibold py-3 rounded-2xl hover:bg-emerald-500/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+            >
+              <DollarSign className="w-5 h-5" />
+              <span>{isClaiming ? 'Claiming...' : `Claim ${task.reward}`}</span>
+              <ArrowDown className="w-4 h-4" />
+            </button>
+          )}
+
+          {hasClaimed && (
+            <div className="flex-1 liquid-glass rounded-2xl py-3 text-center text-emerald-400 border border-emerald-500/30">
+              <CheckCircle2 className="w-5 h-5 mx-auto mb-1" />
+              <span className="font-mono">Payment Claimed ✓</span>
+            </div>
+          )}
+
+          {isFullyCompleted && !hasClaimed && !canClaim && (
             <div className="flex-1 liquid-glass rounded-2xl py-3 text-center text-white/60 border border-white/10">
               <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto mb-1" />
               <span className="font-mono">Task Completed</span>

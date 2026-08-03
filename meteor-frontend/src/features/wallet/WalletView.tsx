@@ -7,6 +7,7 @@ import { FadingVideo } from '../../components/shared/FadingVideo';
 import { Wallet, ArrowUpRight, ArrowDownLeft, ShieldCheck, Zap, RefreshCw, ExternalLink, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { formatEther } from 'viem';
+import { useRef } from 'react';
 
 export const WalletView: React.FC = () => {
   const { transactions, isLoading: txLoading, totalEarnings, totalSpending, pendingRewards, claimPayment } = usePayments();
@@ -15,15 +16,16 @@ export const WalletView: React.FC = () => {
   const { toast } = useToast();
 
   const pendingRewardsDisplay = pendingRewards?.toFixed(1) || '0.0';
-  const monBalance = balance ? parseFloat(formatEther(balance.value)).toFixed(2) : '0.00';
+    const monBalance = balance ? parseFloat(formatEther(balance.value)).toFixed(2) : '0.00';
 
-  // Show toast on error but don't block UI
-  React.useEffect(() => {
-    // The usePayments hook would need to expose error state
-    // For now we rely on the query's internal error handling
-  }, []);
+    // Show toast on error but don't block UI - only show once per error
+    const errorToastShown = useRef(false);
+    React.useEffect(() => {
+      // The usePayments hook would need to expose error state
+      // For now we rely on the query's internal error handling
+    }, []);
 
-  return (
+    return (
     <div className="relative min-h-screen bg-black text-white pt-28 pb-20 px-4 md:px-8 overflow-hidden">
       {/* Background Video (full bleed) with custom JS crossfade */}
       <FadingVideo
