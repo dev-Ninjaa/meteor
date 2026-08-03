@@ -1,8 +1,11 @@
 'use client'
 
-import { useToast } from '../../hooks/useToast'
+import { useToast as useToastHook } from '../../hooks/useToast'
 import { X } from 'lucide-react'
 import { cn } from '../../lib/utils'
+
+// Re-export the hook
+export const useToast = useToastHook
 
 export function Toaster() {
   const { toasts } = useToast()
