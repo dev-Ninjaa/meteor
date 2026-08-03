@@ -53,10 +53,13 @@ export class AuthService {
       throw new UnauthorizedException('No nonce requested for this wallet');
     }
 
+    // Reconstruct the exact same SIWE message that frontend signs
+    const siweMessage = `meteor.xyz wants you to sign in with your Ethereum account:\n${walletAddress}\n\nNonce: ${user.nonce}\n\nBy signing, you are proving you own this wallet and logging in. This does not initiate a transaction or cost any fees.`;
+
     let recoveredAddress: string;
     try {
       recoveredAddress = await recoverMessageAddress({
-        message: user.nonce,
+        message: siweMessage,
         signature: signature as `0x${string}`,
       });
     } catch {

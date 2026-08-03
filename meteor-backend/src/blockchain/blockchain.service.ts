@@ -1,10 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { createPublicClient, createWalletClient, http, parseEther } from 'viem'
-import { encodeFunctionData } from 'viem/utils'
-import { privateKeyToAccount } from 'viem/accounts'
+import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { createPublicClient, createWalletClient, http, parseEther } from 'viem';
+import { encodeFunctionData } from 'viem/utils';
+import { privateKeyToAccount } from 'viem/accounts';
 
-const ESCROW_ABI = [
+export const ESCROW_ABI = [
   {
     type: 'function',
     name: 'lockEscrow',
@@ -61,9 +61,9 @@ const ESCROW_ABI = [
     inputs: [],
     outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
   },
-] as const
+] as const;
 
-const MONAD_CHAIN = {
+export const MONAD_CHAIN = {
   id: 10143,
   name: 'Monad Testnet',
   nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 } as const,
@@ -123,7 +123,7 @@ export class BlockchainService {
     const data = encodeFunctionData({
       abi: ESCROW_ABI,
       functionName: 'lockEscrow',
-      args: [taskIdBytes32, rewardPerWorkerWei, BigInt(maxWorkers)],
+      args: [taskIdBytes32, rewardPerWorkerWei, maxWorkersBigInt],
     });
 
     const hash = await this.walletClient.sendTransaction({
@@ -135,10 +135,7 @@ export class BlockchainService {
     return { txHash: hash };
   }
 
-  async releaseFunds(
-    taskId: string,
-    submissionId: string,
-  ): Promise<{ txHash: string }> {
+  async releaseFunds(taskId: string, submissionId: string): Promise<{ txHash: string }> {
     this.logger.log(`Releasing funds for task ${taskId}, submission ${submissionId}`);
 
     if (!this.walletClient) {
@@ -159,10 +156,7 @@ export class BlockchainService {
     return { txHash: hash };
   }
 
-  async refundEscrow(
-    taskId: string,
-    reason: string,
-  ): Promise<{ txHash: string }> {
+  async refundEscrow(taskId: string, reason: string): Promise<{ txHash: string }> {
     this.logger.log(`Refunding escrow for task ${taskId}, reason: ${reason}`);
 
     if (!this.walletClient) {
