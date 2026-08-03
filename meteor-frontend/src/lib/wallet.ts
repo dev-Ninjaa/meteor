@@ -17,20 +17,32 @@ export async function signInWithEthereum(address: `0x${string}`): Promise<{ sign
     throw new Error('No wallet detected');
   }
 
+  // Get nonce from backend
+  const { authApi } = await import('../lib/api');
+  
+  console.log('[signInWithEthereum] Requesting nonce for:', address);
+  const nonceResponse = await authApi.getNonce({ address });
+  console.log('[signInWithEthereum] Nonce response:', nonceResponse);
+  
+  // Backend returns wrapped response: {statusCode, message, data: {nonce, walletAddress}, ...}
+  const nonce = nonceResponse?.data?.nonce;
+  if (!nonce) {
+    console.error('[signInWithEthereum] No nonce in response data:', nonceResponse);
+    throw new Error('Failed to get nonce from backend');
+  }
+
+  // Create SIWE message
+  const message = `meteor.xyz wants you to sign in with your Ethereum account:\n${address}\n\nNonce: ${nonce}\n\nBy signing, you are proving you own this wallet and logging in. This does not initiate a transaction or cost any fees.`;
+
+  console.log('[signInWithEthereum] SIWE message:', message);
+
+  // Sign message
   const walletClient = createWalletClient({
     account: address,
     chain: monadTestnet,
     transport: custom(window.ethereum),
   });
 
-  // Get nonce from backend
-  const { authApi } = await import('../lib/api');
-  const { nonce } = await authApi.getNonce({ address });
-
-  // Create SIWE message
-  const message = `meteor.xyz wants you to sign in with your Ethereum account:\n${address}\n\nNonce: ${nonce}\n\nBy signing, you are proving you own this wallet and logging in. This does not initiate a transaction or cost any fees.`;
-
-  // Sign message
   const signature = await walletClient.signMessage({ message });
 
   return { signature, message };
