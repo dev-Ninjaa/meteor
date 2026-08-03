@@ -68,7 +68,10 @@ describe('PaymentsController', () => {
 
       jest.spyOn(paymentsService, 'createEscrow').mockResolvedValue(mockResponse);
 
-      const result = await controller.createEscrow('creator-id', { taskId: 'task-id' });
+      const result = await controller.createEscrow('creator-id', {
+        taskId: 'task-id',
+        txHash: '0x123',
+      });
 
       expect(result).toHaveProperty('txHash', '0xabc');
     });

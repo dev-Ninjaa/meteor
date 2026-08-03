@@ -154,7 +154,10 @@ describe('PaymentsService', () => {
           return cb(tx);
         });
 
-      const result = await service.createEscrow('creator-id', { taskId: 'task-id' });
+      const result = await service.createEscrow('creator-id', {
+        taskId: 'task-id',
+        txHash: '0x123',
+      });
 
       expect(result).toHaveProperty('txHash', '0xescrow');
       expect(result).toHaveProperty('status', 'LOCKED');
@@ -164,36 +167,36 @@ describe('PaymentsService', () => {
     it('should throw NotFoundException for non-existent task', async () => {
       jest.spyOn(prisma.task, 'findUnique').mockResolvedValue(null);
 
-      await expect(service.createEscrow('creator-id', { taskId: 'task-id' })).rejects.toThrow(
-        'Task not found',
-      );
+      await expect(
+        service.createEscrow('creator-id', { taskId: 'task-id', txHash: '0x123' }),
+      ).rejects.toThrow('Task not found');
     });
 
     it('should throw ForbiddenException when not the creator', async () => {
       const mockTask = createMockTask();
       jest.spyOn(prisma.task, 'findUnique').mockResolvedValue(mockTask);
 
-      await expect(service.createEscrow('other-user', { taskId: 'task-id' })).rejects.toThrow(
-        'Only the task creator can create escrow',
-      );
+      await expect(
+        service.createEscrow('other-user', { taskId: 'task-id', txHash: '0x123' }),
+      ).rejects.toThrow('Only the task creator can create escrow');
     });
 
     it('should throw ForbiddenException when task is not OPEN', async () => {
       const mockTask = createMockTask({ status: 'DRAFT' });
       jest.spyOn(prisma.task, 'findUnique').mockResolvedValue(mockTask);
 
-      await expect(service.createEscrow('creator-id', { taskId: 'task-id' })).rejects.toThrow(
-        'Can only create escrow for open tasks',
-      );
+      await expect(
+        service.createEscrow('creator-id', { taskId: 'task-id', txHash: '0x123' }),
+      ).rejects.toThrow('Can only create escrow for open tasks');
     });
 
     it('should throw ConflictException when escrow already exists', async () => {
       const mockTask = createMockTask({ escrowStatus: 'LOCKED' as EscrowStatus });
       jest.spyOn(prisma.task, 'findUnique').mockResolvedValue(mockTask);
 
-      await expect(service.createEscrow('creator-id', { taskId: 'task-id' })).rejects.toThrow(
-        'Escrow already exists for this task',
-      );
+      await expect(
+        service.createEscrow('creator-id', { taskId: 'task-id', txHash: '0x123' }),
+      ).rejects.toThrow('Escrow already exists for this task');
     });
   });
 

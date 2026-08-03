@@ -9,6 +9,13 @@ export class CreateEscrowDto {
   @IsString()
   taskId!: string;
 
+  @ApiProperty({
+    description: 'Transaction hash from creator signing lockEscrow on contract',
+    example: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+  })
+  @IsString()
+  txHash!: string;
+
   @ApiPropertyOptional({
     description: 'Escrow amount (defaults to reward * workersRequired)',
     example: '0.5',

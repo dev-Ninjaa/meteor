@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Prisma, EscrowStatus, TransactionStatus } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
-import { BlockchainService } from '../blockchain/blockchain.service';
+import { BlockchainService, MONAD_CHAIN } from '../blockchain/blockchain.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/notification-types';
 import { EventEmitterService } from '../websocket/event-emitter.service';
@@ -15,6 +15,7 @@ import { CreateEscrowDto } from './dto/create-escrow.dto';
 import { ReleaseEscrowDto } from './dto/release-escrow.dto';
 import { RefundEscrowDto } from './dto/refund-escrow.dto';
 import { QueryTransactionsDto } from './dto/query-transactions.dto';
+import { ConfigService } from '@nestjs/config';
 
 export interface TransactionResponse {
   id: string;
@@ -41,6 +42,7 @@ export class PaymentsService {
     private readonly blockchainService: BlockchainService,
     private readonly notificationsService: NotificationsService,
     private readonly eventEmitter: EventEmitterService,
+    private readonly configService: ConfigService,
   ) {}
 
   async createEscrow(userId: string, dto: CreateEscrowDto): Promise<TransactionResponse> {
@@ -65,22 +67,24 @@ export class PaymentsService {
     const totalAmount =
       dto.amount || new Prisma.Decimal(task.reward).mul(task.workersRequired).toString();
 
-    const creator = await this.prisma.user.findUnique({ where: { id: userId } });
-    const workerAddress = creator?.walletAddress || '';
+    // Verify the transaction on-chain (creator's tx)
+    const receipt = await this.verifyEscrowTransaction(dto.txHash, dto.taskId);
+    if (!receipt.confirmed) {
+      throw new ForbiddenException('Transaction not confirmed on-chain');
+    }
 
-    const { txHash } = await this.blockchainService.createEscrow(
-      dto.taskId,
-      task.reward.toString(), // rewardPerWorker
-      task.workersRequired.toString(), // maxWorkers
-      totalAmount,
-    );
+    // Verify the transaction matches expected parameters
+    const isValid = await this.validateEscrowTransaction(dto.txHash, dto.taskId, totalAmount);
+    if (!isValid) {
+      throw new ForbiddenException('Transaction does not match expected escrow parameters');
+    }
 
     const transaction = await this.prisma.$transaction(async (tx) => {
       const txRecord = await tx.transaction.create({
         data: {
           amount: new Prisma.Decimal(totalAmount),
           tokenAddress: task.tokenAddress,
-          txHash,
+          txHash: dto.txHash,
           status: 'LOCKED' as TransactionStatus,
           type: 'ESCROW_CREATE',
           taskId: dto.taskId,
@@ -94,7 +98,7 @@ export class PaymentsService {
       });
 
       this.logger.log(
-        `Escrow created for task ${dto.taskId}: txHash=${txHash}, amount=${totalAmount}`,
+        `Escrow created for task ${dto.taskId}: txHash=${dto.txHash}, amount=${totalAmount}`,
       );
 
       return txRecord;
@@ -105,14 +109,14 @@ export class PaymentsService {
       type: NotificationType.ESCROW_LOCKED,
       title: 'Escrow Locked',
       message: `Escrow of ${totalAmount} has been locked for task "${task.title}".`,
-      metadata: { taskId: dto.taskId, amount: totalAmount, txHash },
+      metadata: { taskId: dto.taskId, amount: totalAmount, txHash: dto.txHash },
     });
 
     this.eventEmitter.emit('escrow.locked', {
       taskId: dto.taskId,
       userId,
       amount: totalAmount,
-      txHash,
+      txHash: dto.txHash,
     });
 
     return this.mapTransactionResponse(transaction);
@@ -154,10 +158,7 @@ export class PaymentsService {
       throw new ForbiddenException('Cannot release payment without a passed verification');
     }
 
-    const { txHash } = await this.blockchainService.releaseFunds(
-      dto.taskId,
-      dto.submissionId,
-    );
+    const { txHash } = await this.blockchainService.releaseFunds(dto.taskId, dto.submissionId);
 
     const transaction = await this.prisma.$transaction(async (tx) => {
       const txRecord = await tx.transaction.create({
@@ -341,6 +342,60 @@ export class PaymentsService {
     }
 
     return this.mapTransactionResponse(transaction);
+  }
+
+  private async verifyEscrowTransaction(
+    txHash: string,
+    _taskId: string,
+  ): Promise<{ confirmed: boolean; blockNumber: bigint | null }> {
+    const { createPublicClient, http } = await import('viem');
+
+    const rpcUrl = this.configService.get<string>('monad.rpcUrl', 'https://testnet-rpc.monad.xyz');
+    const chainId = this.configService.get<number>('monad.chainId', 10143);
+    const chain = { ...MONAD_CHAIN, id: chainId, rpcUrls: { default: { http: [rpcUrl] } } };
+
+    const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+
+    const receipt = await publicClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+
+    return {
+      confirmed: receipt.status === 'success',
+      blockNumber: receipt.blockNumber,
+    };
+  }
+
+  private async validateEscrowTransaction(
+    txHash: string,
+    taskId: string,
+    expectedAmount: string,
+  ): Promise<boolean> {
+    const { createPublicClient, http, parseEther } = await import('viem');
+
+    const rpcUrl = this.configService.get<string>('monad.rpcUrl', 'https://testnet-rpc.monad.xyz');
+    const chainId = this.configService.get<number>('monad.chainId', 10143);
+    const chain = { ...MONAD_CHAIN, id: chainId, rpcUrls: { default: { http: [rpcUrl] } } };
+
+    const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
+    const escrowContractAddress = this.configService.get<string>('monad.escrowContractAddress', '');
+
+    try {
+      const tx = await publicClient.getTransaction({ hash: txHash as `0x${string}` });
+
+      // Verify recipient is escrow contract
+      if (tx.to?.toLowerCase() !== escrowContractAddress.toLowerCase()) {
+        return false;
+      }
+
+      // Verify value matches expected amount
+      const expectedValue = parseEther(expectedAmount);
+      if (tx.value !== expectedValue) {
+        return false;
+      }
+
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private mapTransactionResponse(tx: {
