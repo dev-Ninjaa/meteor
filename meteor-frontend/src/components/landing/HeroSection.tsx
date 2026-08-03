@@ -5,9 +5,11 @@ import { GithubIcon } from '../shared/GithubIcon';
 import { useAppStore } from '../../store/useAppStore';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const HeroSection: React.FC = () => {
   const { setActiveTab } = useAppStore();
+  const navigate = useNavigate();
 
   return (
     <section className="relative min-h-screen w-full bg-black overflow-hidden flex flex-col items-center justify-start text-center pt-32 sm:pt-36 pb-12 px-6">
@@ -49,7 +51,7 @@ export const HeroSection: React.FC = () => {
           className="flex flex-wrap items-center justify-center gap-4"
         >
           <button
-            onClick={() => setActiveTab('marketplace')}
+            onClick={() => navigate('/app/marketplace')}
             className="liquid-glass-strong rounded-full px-7 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-all flex items-center gap-2 shadow-2xl group border border-white/20"
           >
             <Zap className="w-4 h-4 text-[#836EF9] group-hover:scale-110 transition-transform" />
