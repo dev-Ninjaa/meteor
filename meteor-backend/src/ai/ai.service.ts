@@ -29,7 +29,8 @@ export class AiService {
   private readonly genAi: GoogleGenerativeAI | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = this.configService.get<string>('gemini.apiKey') || process.env.GEMINI_API_KEY || '';
+    const apiKey =
+      this.configService.get<string>('gemini.apiKey') || process.env.GEMINI_API_KEY || '';
 
     if (apiKey) {
       this.genAi = new GoogleGenerativeAI(apiKey);
@@ -38,15 +39,18 @@ export class AiService {
 
   private resolveModelNames(): string[] {
     const configuredValue =
-      this.configService.get<string>('gemini.model') || process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+      this.configService.get<string>('gemini.model') ||
+      process.env.GEMINI_MODEL ||
+      'gemini-3.6-flash';
 
     const candidates = configuredValue
       .split(/\s*\|\|\s*|\s*,\s*/)
       .map((entry) => entry.trim())
       .filter(Boolean);
 
-    const validModels = candidates.filter((model): model is (typeof SUPPORTED_GEMINI_MODELS)[number] =>
-      SUPPORTED_GEMINI_MODELS.includes(model as (typeof SUPPORTED_GEMINI_MODELS)[number]),
+    const validModels = candidates.filter(
+      (model): model is (typeof SUPPORTED_GEMINI_MODELS)[number] =>
+        SUPPORTED_GEMINI_MODELS.includes(model as (typeof SUPPORTED_GEMINI_MODELS)[number]),
     );
 
     return validModels.length > 0 ? validModels : ['gemini-3.6-flash'];
@@ -77,7 +81,9 @@ export class AiService {
       }
     }
 
-    throw new Error(`Unable to generate content with the configured Gemini models. ${failures.join(' | ')}`);
+    throw new Error(
+      `Unable to generate content with the configured Gemini models. ${failures.join(' | ')}`,
+    );
   }
 
   async verifySubmission(params: {

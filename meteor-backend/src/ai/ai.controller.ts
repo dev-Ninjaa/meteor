@@ -12,8 +12,8 @@ export class AiController {
   @Post('generate-task')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate task structure from natural language prompt' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'AI-generated task suggestion',
     schema: {
       example: {
@@ -25,8 +25,8 @@ export class AiController {
         maxWorkers: 5,
         verificationMode: 'AI',
         category: 'testing',
-      }
-    }
+      },
+    },
   })
   async generateTask(@Body() dto: GenerateTaskDto): Promise<AiTaskSuggestion> {
     return this.aiService.generateTask(dto);
@@ -35,18 +35,20 @@ export class AiController {
   @Post('verify-task')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify a submission using AI' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'AI verification result',
     schema: {
       example: {
         passed: true,
         score: 0.95,
         feedback: 'Submission meets all requirements. Found 4 bugs with clear reproduction steps.',
-      }
-    }
+      },
+    },
   })
-  async verifyTask(@Body() dto: VerifyTaskDto): Promise<{ passed: boolean; score: number; feedback: string }> {
+  async verifyTask(
+    @Body() dto: VerifyTaskDto,
+  ): Promise<{ passed: boolean; score: number; feedback: string }> {
     const result = await this.aiService.verifySubmission({
       taskTitle: dto.taskTitle,
       taskDescription: dto.taskDescription,

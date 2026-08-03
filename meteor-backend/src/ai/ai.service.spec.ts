@@ -22,7 +22,7 @@ describe('AiService', () => {
 
   describe('model selection', () => {
     it('should resolve the supported flash models when no model is configured', () => {
-      expect((service as any).resolveModelNames()).toEqual(['gemini-3.6-flash']);
+      expect(service['resolveModelNames']()).toEqual(['gemini-3.6-flash']);
     });
 
     it('should parse logical OR model values from the environment', () => {
@@ -30,7 +30,7 @@ describe('AiService', () => {
       process.env.GEMINI_MODEL = 'gemini-3.6-flash';
 
       try {
-        expect((service as any).resolveModelNames()).toEqual(['gemini-3.6-flash']);
+        expect(service['resolveModelNames']()).toEqual(['gemini-3.6-flash']);
       } finally {
         if (original === undefined) {
           delete process.env.GEMINI_MODEL;
