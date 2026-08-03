@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { TaskItem, TransactionItem } from '../types/task';
-import confetti from 'canvas-confetti';
 
 export type AppTab = 'landing' | 'marketplace' | 'dashboard' | 'wallet' | 'profile';
 
@@ -26,6 +25,32 @@ interface AppState {
   setIsCreateModalOpen: (open: boolean) => void;
   isSolveModalOpen: boolean;
   setIsSolveModalOpen: (open: boolean) => void;
+  isDetailModalOpen: boolean;
+  setIsDetailModalOpen: (open: boolean) => void;
+
+  // Manual Verification Modal (for creators)
+  manualVerificationData: {
+    submissionId: string;
+    taskId: string;
+    taskTitle: string;
+    submissionContent: string;
+    reward: string;
+  } | null;
+  setManualVerificationData: (data: any) => void;
+  isManualVerifyModalOpen: boolean;
+  setIsManualVerifyModalOpen: (open: boolean) => void;
+
+  // Escrow Lock Modal
+  escrowLockData: {
+    taskId: string;
+    rewardPerWorker: string;
+    maxWorkers: number;
+    totalAmount: string;
+    escrowContractAddress: string;
+  } | null;
+  setEscrowLockData: (data: any) => void;
+  isLockingEscrow: boolean;
+  setIsLockingEscrow: (v: boolean) => void;
 
   // Wallet (synced with wagmi)
   isConnected: boolean;
@@ -64,6 +89,20 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsCreateModalOpen: (open) => set({ isCreateModalOpen: open }),
   isSolveModalOpen: false,
   setIsSolveModalOpen: (open) => set({ isSolveModalOpen: open }),
+  isDetailModalOpen: false,
+  setIsDetailModalOpen: (open) => set({ isDetailModalOpen: open }),
+
+  // Manual Verification Modal (for creators)
+  manualVerificationData: null,
+  setManualVerificationData: (data) => set({ manualVerificationData: data }),
+  isManualVerifyModalOpen: false,
+  setIsManualVerifyModalOpen: (open) => set({ isManualVerifyModalOpen: open }),
+
+  // Escrow Lock Modal
+  escrowLockData: null,
+  setEscrowLockData: (data) => set({ escrowLockData: data }),
+  isLockingEscrow: false,
+  setIsLockingEscrow: (v: boolean) => set({ isLockingEscrow: v }),
 
   // Wallet
   isConnected: false,
