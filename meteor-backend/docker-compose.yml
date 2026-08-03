@@ -39,8 +39,24 @@ services:
     restart: unless-stopped
     ports:
       - '4000:4000'
-    env_file:
-      - .env
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      API_PREFIX: api
+      API_VERSION: 1
+      DATABASE_URL: postgresql://meteor:meteor123@postgres:5432/meteor_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      MONAD_RPC_URL: ${MONAD_RPC_URL}
+      MONAD_CHAIN_ID: ${MONAD_CHAIN_ID}
+      MONAD_ESCROW_CONTRACT_ADDRESS: ${MONAD_ESCROW_CONTRACT_ADDRESS}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${GEMINI_MODEL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      LOG_LEVEL: ${LOG_LEVEL}
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules

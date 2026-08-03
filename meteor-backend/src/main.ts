@@ -33,7 +33,10 @@ async function bootstrap(): Promise<void> {
   app.use(cookieParser());
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       if (!origin || isAllowedCorsOrigin(origin, corsOrigin)) {
         callback(null, true);
         return;

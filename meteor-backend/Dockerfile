@@ -1,29 +1,47 @@
-FROM node:24-alpine AS base
+# Multi-stage Dockerfile using Bun
+FROM oven/bun:1.1-alpine AS base
 
 WORKDIR /usr/src/app
 
-COPY package.json package-lock.json ./
+# Install dependencies only when needed
+FROM base AS deps
+COPY package.json bun.lockb* ./
+RUN bun install --frozen-lockfile
 
+# Development stage with hot reload
 FROM base AS development
-RUN npm ci
+COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY . .
-RUN npm run prisma:generate
+RUN bun run prisma:generate
 EXPOSE 4000
-CMD ["npm", "run", "start:dev"]
+CMD ["bun", "run", "start:dev"]
 
+# Build stage
 FROM base AS build
-RUN npm ci
+COPY --from=deps /usr/src/app/node_modules ./node_modules
 COPY . .
-RUN npm run prisma:generate
-RUN npm run build
+RUN bun run prisma:generate
+RUN bun run build
 
-FROM node:24-alpine AS production
+# Production stage - minimal image
+FROM oven/bun:1.1-alpine AS production
 WORKDIR /usr/src/app
+
+# Copy only production artifacts
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/package.json ./
 COPY --from=build /usr/src/app/prisma ./prisma
-COPY --from=build /usr/src/app/.env ./
-RUN npm run prisma:generate
+
+# Generate Prisma client in production
+RUN bun run prisma:generate
+
+# Non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nestjs -u 1001
+
+USER nestjs
+
 EXPOSE 4000
-CMD ["node", "dist/main"]
+ENV NODE_ENV=production
+CMD ["bun", "run", "dist/main.js"]
