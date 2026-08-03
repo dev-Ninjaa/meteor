@@ -18,6 +18,8 @@ import { ProfileView } from './features/profile/ProfileView';
 
 import { CreateTaskModal } from './components/marketplace/CreateTaskModal';
 import { InteractiveSolverModal } from './components/marketplace/InteractiveSolverModal';
+import { TaskDetailModalWrapper } from './components/marketplace/TaskDetailModalWrapper';
+import { ManualVerificationModal } from './components/marketplace/ManualVerificationModal';
 
 // Landing page component
 const LandingPage: React.FC = () => (
@@ -41,6 +43,8 @@ const AppLayout: React.FC = () => (
     </main>
     <CreateTaskModal />
     <InteractiveSolverModal />
+    <TaskDetailModalWrapper />
+    <ManualVerificationModal />
     <Toasts />
   </div>
 );
