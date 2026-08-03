@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useTasks } from '@/hooks/useTasks';
+import React, { useState, useRef, useEffect } from 'react';
+import { useDashboardCreated, useDashboardSubmitted, useDashboardJoined } from '@/hooks/useDashboard';
 import { useAppStore } from '../../store/useAppStore';
 import { TaskItem, TaskStatus, TaskCategory, VerificationType } from '../../types';
 import { motion } from 'framer-motion';
@@ -22,15 +22,46 @@ import {
 import { useToast } from '@/hooks/useToast';
 
 export const DashboardView: React.FC = () => {
-  const { data: tasksResponse, isLoading, error } = useTasks();
-  const tasks = tasksResponse?.data || [];
-  const { setSelectedTask, setIsSolveModalOpen, setIsCreateModalOpen } = useAppStore();
-  const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'my_tasks' | 'creator_analytics'>('my_tasks');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'IN_PROGRESS' | 'VERIFIED' | 'COMPLETED' | 'CANCELLED'>('ALL');
+  const { data: createdData } = useDashboardCreated();
+  const { data: submittedData } = useDashboardSubmitted();
+  const { data: joinedData } = useDashboardJoined();
+  const { setSelectedTask, setIsSolveModalOpen, setIsCreateModalOpen, setIsDetailModalOpen } = useAppStore();
+    const { toast } = useToast();
+    const [activeTab, setActiveTab] = useState<'created' | 'in_progress' | 'closed' | 'analytics'>('in_progress');
+    const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'IN_PROGRESS' | 'VERIFIED' | 'COMPLETED' | 'CANCELLED'>('ALL');
 
-  // Filter tasks for worker workflow hub
-  const filteredWorkerTasks = tasks.filter((t: TaskItem) => {
+  // Get tasks for active tab
+      const getTasksForTab = () => {
+        switch (activeTab) {
+          case 'created':
+            return createdData?.data || [];
+          case 'in_progress':
+            // In progress = submitted + joined (tasks I'm working on)
+            // Deduplicate by task ID since a task can appear in both submitted and joined
+            const submitted = submittedData?.data || [];
+            const joined = joinedData?.data || [];
+            const combined = [...submitted, ...joined];
+            const seen = new Set();
+            return combined.filter((task: any) => {
+              if (seen.has(task.id)) return false;
+              seen.add(task.id);
+              return true;
+            });
+          case 'closed':
+            return submittedData?.data?.filter((t: any) => t.status === 'COMPLETED' || t.status === 'CANCELLED') || [];
+          case 'analytics':
+            return [];
+          default:
+            return [];
+        }
+      };
+
+  const tasks = getTasksForTab();
+  const isLoading = createdData === undefined || submittedData === undefined || joinedData === undefined;
+  const error = createdData === null || submittedData === null || joinedData === null;
+
+  // Filter tasks for status (only for non-analytics tabs)
+  const filteredTasks = tasks.filter((t: any) => {
     if (statusFilter === 'ALL') return true;
     if (statusFilter === 'PUBLISHED') return t.status === 'PUBLISHED' || t.status === 'OPEN';
     if (statusFilter === 'IN_PROGRESS') return t.status === 'IN_PROGRESS';
@@ -40,22 +71,48 @@ export const DashboardView: React.FC = () => {
     return true;
   });
 
-  const handleTaskClick = (task: TaskItem) => {
-    setSelectedTask(task);
-    setIsSolveModalOpen(true);
-  };
+  const handleTaskClick = (task: any) => {
+        setSelectedTask(task);
+    
+        // Different behavior based on active tab
+        switch (activeTab) {
+          case 'created':
+            // For created tasks, show task detail view with submissions management
+            setIsDetailModalOpen(true);
+            break;
+          case 'in_progress':
+            // In progress = submitted + joined
+            // If task has mySubmission -> show detail, else show solve modal
+            if (task.mySubmission) {
+              setIsDetailModalOpen(true);
+            } else {
+              setIsSolveModalOpen(true);
+            }
+            break;
+          case 'closed':
+            // Closed tasks - show detail
+            setIsDetailModalOpen(true);
+            break;
+          default:
+            setIsSolveModalOpen(true);
+        }
+      };
 
   // Creator analytics metrics
-  const totalTasks = tasks.length;
-  const totalSpent = tasks.reduce((acc: number, t: TaskItem) => acc + t.rewardNum, 0).toFixed(1);
+  const totalTasks = createdData?.total || 0;
+  const totalSpent = (createdData?.data || []).reduce((acc: number, t: any) => acc + (parseFloat(t.reward) || 0), 0).toFixed(1);
   const avgConsensus = 93.8;
 
-  // Show toast on error but don't block UI
-  React.useEffect(() => {
-    if (error && !isLoading) {
+  // Show toast on error but don't block UI - only show once per error
+  const errorToastShown = useRef(false);
+  useEffect(() => {
+    if (error && !isLoading && !errorToastShown.current) {
+      errorToastShown.current = true;
       toast('Failed to load dashboard - using cached data.', 'destructive');
+    } else if (!error) {
+      errorToastShown.current = false;
     }
-  }, [error, isLoading, toast]);
+  }, [error, isLoading]);
 
   // Only show full loader if no tasks at all
   if (isLoading && tasks.length === 0) {
@@ -109,33 +166,53 @@ export const DashboardView: React.FC = () => {
             </h1>
           </div>
 
-          {/* Navigation Sub-Toggle */}
-          <div className="flex items-center gap-1 liquid-glass rounded-full p-1 border border-white/10 bg-black/40">
-            <button
-              onClick={() => setActiveTab('my_tasks')}
-              className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
-                activeTab === 'my_tasks'
-                  ? 'bg-white text-black font-semibold shadow-lg'
-                  : 'text-white/70 hover:text-white'
-              }`}
-            >
-              My Task Lifecycle
-            </button>
-            <button
-              onClick={() => setActiveTab('creator_analytics')}
-              className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
-                activeTab === 'creator_analytics'
-                  ? 'bg-white text-black font-semibold shadow-lg'
-                  : 'text-white/70 hover:text-white'
-              }`}
-            >
-              Creator AI Analytics
-            </button>
-          </div>
+          {/* Navigation Sub-Toggle - Created, In Progress, Closed, Analytics */}
+                              <div className="flex items-center gap-1 liquid-glass rounded-full p-1 border border-white/10 bg-black/40">
+                                <button
+                                  onClick={() => setActiveTab('created')}
+                                  className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
+                                    activeTab === 'created'
+                                      ? 'bg-white text-black font-semibold shadow-lg'
+                                      : 'text-white/70 hover:text-white'
+                                  }`}
+                                >
+                                  Created
+                                </button>
+                                <button
+                                  onClick={() => setActiveTab('in_progress')}
+                                  className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
+                                    activeTab === 'in_progress'
+                                      ? 'bg-white text-black font-semibold shadow-lg'
+                                      : 'text-white/70 hover:text-white'
+                                  }`}
+                                >
+                                  In Progress
+                                </button>
+                                <button
+                                  onClick={() => setActiveTab('closed')}
+                                  className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
+                                    activeTab === 'closed'
+                                      ? 'bg-white text-black font-semibold shadow-lg'
+                                      : 'text-white/70 hover:text-white'
+                                  }`}
+                                >
+                                  Closed
+                                </button>
+                                <button
+                                  onClick={() => setActiveTab('analytics')}
+                                  className={`px-5 py-2 rounded-full text-xs font-medium transition-all ${
+                                    activeTab === 'analytics'
+                                      ? 'bg-white text-black font-semibold shadow-lg'
+                                      : 'text-white/70 hover:text-white'
+                                  }`}
+                                >
+                                  Creator AI Analytics
+                                </button>
+                              </div>
         </motion.div>
 
-        {activeTab === 'my_tasks' ? (
-          <div>
+        {activeTab !== 'analytics' && (
+          <>
             {/* Task Lifecycle State Tabs */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -166,7 +243,7 @@ export const DashboardView: React.FC = () => {
 
             {/* Task Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredWorkerTasks.map((task: TaskItem, idx: number) => (
+              {filteredTasks.map((task: any, idx: number) => (
                 <motion.div
                   key={task.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -204,15 +281,17 @@ export const DashboardView: React.FC = () => {
                   </div>
                 </motion.div>
               ))}
-            </div>
 
-            {filteredWorkerTasks.length === 0 && (
-              <div className="text-center py-20 text-white/40 font-mono text-xs">
-                No tasks match your current filter.
-              </div>
-            )}
-          </div>
-        ) : (
+              {filteredTasks.length === 0 && (
+                <div className="text-center py-20 text-white/40 font-mono text-xs">
+                  No tasks match your current filter.
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {activeTab === 'analytics' && (
           <div>
             {/* Creator AI Analytics Overview Metrics */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
@@ -244,7 +323,7 @@ export const DashboardView: React.FC = () => {
             </div>
 
             {/* AI Summary Analytics for Tasks */}
-            {tasks.map((task: TaskItem) =>
+            {tasks.map((task: any) =>
               task.aiSummary && <AiSummaryCard key={task.id} summary={task.aiSummary} />
             )}
           </div>
