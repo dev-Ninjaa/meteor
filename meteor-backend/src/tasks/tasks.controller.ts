@@ -78,13 +78,27 @@ export class TasksController {
   @Post(':id/publish')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Publish a draft task (creator only)' })
-  @ApiResponse({ status: 200, description: 'Task published', type: TaskResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Task published with escrow data',
+    type: TaskResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Task not found' })
   async publish(
     @CurrentUser('sub') userId: string,
     @Param('id') id: string,
-  ): Promise<TaskResponseDto> {
+  ): Promise<
+    TaskResponseDto & {
+      escrowData: {
+        taskId: string;
+        rewardPerWorker: string;
+        maxWorkers: number;
+        totalAmount: string;
+        escrowContractAddress: string;
+      };
+    }
+  > {
     return this.tasksService.publish(userId, id);
   }
 

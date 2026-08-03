@@ -64,6 +64,7 @@ describe('TasksController', () => {
         verificationMode: 'AI',
         allowAiVerification: true,
         manualVerificationRequired: false,
+        escrowStatus: 'UNLOCKED',
         createdById: 'user-id',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -121,6 +122,7 @@ describe('TasksController', () => {
         verificationMode: 'AI',
         allowAiVerification: true,
         manualVerificationRequired: false,
+        escrowStatus: 'UNLOCKED',
         createdById: 'user-id',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -152,6 +154,7 @@ describe('TasksController', () => {
         verificationMode: 'AI',
         allowAiVerification: true,
         manualVerificationRequired: false,
+        escrowStatus: 'UNLOCKED',
         createdById: 'user-id',
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -191,14 +194,23 @@ describe('TasksController', () => {
         verificationMode: 'AI',
         allowAiVerification: true,
         manualVerificationRequired: false,
+        escrowStatus: 'UNLOCKED',
         createdById: 'user-id',
         createdAt: new Date(),
         updatedAt: new Date(),
+        escrowData: {
+          taskId: 'task-id',
+          rewardPerWorker: '0.1',
+          maxWorkers: 5,
+          totalAmount: '0.5',
+          escrowContractAddress: '0x1234567890abcdef',
+        },
       });
 
       const result = await controller.publish('user-id', 'task-id');
 
       expect(result).toHaveProperty('status', 'OPEN');
+      expect(result).toHaveProperty('escrowData');
     });
   });
 
@@ -220,6 +232,7 @@ describe('TasksController', () => {
         verificationMode: 'AI',
         allowAiVerification: true,
         manualVerificationRequired: false,
+        escrowStatus: 'UNLOCKED',
         createdById: 'user-id',
         createdAt: new Date(),
         updatedAt: new Date(),

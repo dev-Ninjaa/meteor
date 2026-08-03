@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsNumber, Min } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsNumber, Min, IsBoolean } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class QueryTasksDto {
@@ -37,4 +37,15 @@ export class QueryTasksDto {
   @IsString()
   @IsOptional()
   tag?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by escrow status', enum: ['UNLOCKED', 'LOCKED', 'RELEASED', 'REFUNDED'] })
+  @IsString()
+  @IsOptional()
+  @IsEnum(['UNLOCKED', 'LOCKED', 'RELEASED', 'REFUNDED'])
+  escrowStatus?: string;
+
+  @ApiPropertyOptional({ description: 'Include unlocked (draft) tasks', default: false })
+  @IsBoolean()
+  @IsOptional()
+  showUnlocked?: boolean;
 }

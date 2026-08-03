@@ -14,6 +14,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { QueryTasksDto } from './dto/query-tasks.dto';
 import { TaskResponseDto } from './dto/task-response.dto';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class TasksService {
@@ -23,6 +24,7 @@ export class TasksService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     private readonly eventEmitter: EventEmitterService,
+    private readonly configService: ConfigService,
   ) {}
 
   async create(userId: string, dto: CreateTaskDto): Promise<TaskResponseDto> {
@@ -39,6 +41,7 @@ export class TasksService {
         allowAiVerification: dto.allowAiVerification ?? true,
         manualVerificationRequired: dto.manualVerificationRequired ?? false,
         createdById: userId,
+        status: 'DRAFT',
       },
     });
 
@@ -70,6 +73,7 @@ export class TasksService {
 
     const where: Prisma.TaskWhereInput = {
       deletedAt: null,
+      // No default escrowStatus filter - show all tasks
     };
 
     if (query.search) {
@@ -89,6 +93,11 @@ export class TasksService {
 
     if (query.tag) {
       where.tags = { has: query.tag };
+    }
+
+    // Add escrowStatus filter only if explicitly provided
+    if (query.escrowStatus) {
+      where.escrowStatus = query.escrowStatus as any;
     }
 
     const [data, total] = await Promise.all([
@@ -177,7 +186,20 @@ export class TasksService {
     this.logger.log(`Task soft-deleted: ${id}`);
   }
 
-  async publish(userId: string, id: string): Promise<TaskResponseDto> {
+  async publish(
+    userId: string,
+    id: string,
+  ): Promise<
+    TaskResponseDto & {
+      escrowData: {
+        taskId: string;
+        rewardPerWorker: string;
+        maxWorkers: number;
+        totalAmount: string;
+        escrowContractAddress: string;
+      };
+    }
+  > {
     const task = await this.findTaskOrThrow(id);
 
     if (task.createdById !== userId) {
@@ -202,7 +224,6 @@ export class TasksService {
     });
 
     this.logger.log(`Task published: ${id}`);
-
     this.eventEmitter.emit('task.published', {
       taskId: updated.id,
       title: updated.title,
@@ -210,7 +231,20 @@ export class TasksService {
       status: updated.status,
     });
 
-    return this.mapTaskResponse(updated);
+    // Return escrow data for frontend to prompt creator to lock escrow
+    const totalAmount = new Prisma.Decimal(task.reward).mul(task.workersRequired).toString();
+    const escrowContractAddress = this.configService.get<string>('monad.escrowContractAddress', '');
+
+    return {
+      ...this.mapTaskResponse(updated),
+      escrowData: {
+        taskId: updated.id,
+        rewardPerWorker: task.reward.toString(),
+        maxWorkers: task.maxWorkers,
+        totalAmount,
+        escrowContractAddress,
+      },
+    };
   }
 
   async cancel(userId: string, id: string): Promise<TaskResponseDto> {
@@ -428,6 +462,7 @@ export class TasksService {
       verificationMode: task.verificationMode,
       allowAiVerification: task.allowAiVerification,
       manualVerificationRequired: task.manualVerificationRequired,
+      escrowStatus: task.escrowStatus,
       createdById: task.createdById,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,

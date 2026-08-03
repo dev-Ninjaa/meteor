@@ -49,6 +49,9 @@ export class TaskResponseDto {
   @ApiProperty({ example: false })
   manualVerificationRequired!: boolean;
 
+  @ApiProperty({ example: 'LOCKED', enum: ['UNLOCKED', 'LOCKED', 'RELEASED', 'REFUNDED'] })
+  escrowStatus!: string;
+
   @ApiProperty()
   createdById!: string;
 
