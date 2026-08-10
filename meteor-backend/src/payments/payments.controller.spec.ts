@@ -144,7 +144,7 @@ describe('PaymentsController', () => {
 
       jest.spyOn(paymentsService, 'findTransactions').mockResolvedValue(mockResponse);
 
-      const result = await controller.findTransactions({});
+      const result = await controller.findTransactions('user-id', {});
 
       expect(result).toHaveProperty('total', 0);
     });

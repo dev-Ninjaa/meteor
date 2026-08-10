@@ -142,7 +142,20 @@ describe('PaymentsService', () => {
       jest
         .spyOn(prisma.user, 'findUnique')
         .mockResolvedValue({ id: 'creator-id', walletAddress: '0xCreator' } as unknown as User);
-      jest.spyOn(blockchainService, 'createEscrow').mockResolvedValue({ txHash: '0xescrow' });
+      // createEscrow verifies the creator's deposit on-chain via private helpers
+      // that build a viem public client - mock them so no real RPC call is made.
+      jest
+        .spyOn(
+          service as unknown as { verifyEscrowTransaction: () => Promise<unknown> },
+          'verifyEscrowTransaction',
+        )
+        .mockResolvedValue({ confirmed: true, blockNumber: BigInt(1000) });
+      jest
+        .spyOn(
+          service as unknown as { validateEscrowTransaction: () => Promise<unknown> },
+          'validateEscrowTransaction',
+        )
+        .mockResolvedValue(true);
       jest
         .spyOn(prisma, '$transaction')
         .mockImplementation((cb: (tx: typeof prisma) => Promise<unknown>) => {
@@ -161,7 +174,8 @@ describe('PaymentsService', () => {
 
       expect(result).toHaveProperty('txHash', '0xescrow');
       expect(result).toHaveProperty('status', 'LOCKED');
-      expect(blockchainService.createEscrow).toHaveBeenCalled();
+      expect(prisma.transaction.create).toHaveBeenCalled();
+      expect(mockNotificationsService.createNotification).toHaveBeenCalled();
     });
 
     it('should throw NotFoundException for non-existent task', async () => {
@@ -346,7 +360,7 @@ describe('PaymentsService', () => {
       jest.spyOn(prisma.transaction, 'findMany').mockResolvedValue([mockTx]);
       jest.spyOn(prisma.transaction, 'count').mockResolvedValue(1);
 
-      const result = await service.findTransactions({ page: 1, limit: 20 });
+      const result = await service.findTransactions('user-id', { page: 1, limit: 20 });
 
       expect(result.data).toHaveLength(1);
       expect(result.total).toBe(1);
@@ -357,11 +371,11 @@ describe('PaymentsService', () => {
       jest.spyOn(prisma.transaction, 'findMany').mockResolvedValue([]);
       jest.spyOn(prisma.transaction, 'count').mockResolvedValue(0);
 
-      await service.findTransactions({ status: 'LOCKED' });
+      await service.findTransactions('user-id', { status: 'LOCKED' });
 
       expect(prisma.transaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ status: 'LOCKED' }),
+          where: expect.objectContaining({ status: 'LOCKED', userId: 'user-id' }),
         }),
       );
     });
@@ -370,11 +384,11 @@ describe('PaymentsService', () => {
       jest.spyOn(prisma.transaction, 'findMany').mockResolvedValue([]);
       jest.spyOn(prisma.transaction, 'count').mockResolvedValue(0);
 
-      await service.findTransactions({ type: 'ESCROW_CREATE' });
+      await service.findTransactions('user-id', { type: 'ESCROW_CREATE' });
 
       expect(prisma.transaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ type: 'ESCROW_CREATE' }),
+          where: expect.objectContaining({ type: 'ESCROW_CREATE', userId: 'user-id' }),
         }),
       );
     });
@@ -383,11 +397,11 @@ describe('PaymentsService', () => {
       jest.spyOn(prisma.transaction, 'findMany').mockResolvedValue([]);
       jest.spyOn(prisma.transaction, 'count').mockResolvedValue(0);
 
-      await service.findTransactions({ taskId: 'task-id' });
+      await service.findTransactions('user-id', { taskId: 'task-id' });
 
       expect(prisma.transaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ taskId: 'task-id' }),
+          where: expect.objectContaining({ taskId: 'task-id', userId: 'user-id' }),
         }),
       );
     });

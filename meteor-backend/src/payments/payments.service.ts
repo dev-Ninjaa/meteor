@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   ConflictException,
   Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { Prisma, EscrowStatus, TransactionStatus } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
@@ -14,6 +15,7 @@ import { EventEmitterService } from '../websocket/event-emitter.service';
 import { CreateEscrowDto } from './dto/create-escrow.dto';
 import { ReleaseEscrowDto } from './dto/release-escrow.dto';
 import { RefundEscrowDto } from './dto/refund-escrow.dto';
+import { ClaimEscrowDto } from './dto/claim-escrow.dto';
 import { QueryTransactionsDto } from './dto/query-transactions.dto';
 import { ConfigService } from '@nestjs/config';
 
@@ -34,7 +36,7 @@ export interface TransactionResponse {
 }
 
 @Injectable()
-export class PaymentsService {
+export class PaymentsService implements OnModuleInit {
   private readonly logger = new Logger(PaymentsService.name);
 
   constructor(
@@ -44,6 +46,11 @@ export class PaymentsService {
     private readonly eventEmitter: EventEmitterService,
     private readonly configService: ConfigService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    // Initialize blockchain event listeners
+    await this.blockchainService.initializeEventListeners();
+  }
 
   async createEscrow(userId: string, dto: CreateEscrowDto): Promise<TransactionResponse> {
     const task = await this.prisma.task.findUnique({ where: { id: dto.taskId } });
@@ -158,55 +165,19 @@ export class PaymentsService {
       throw new ForbiddenException('Cannot release payment without a passed verification');
     }
 
-    const { txHash } = await this.blockchainService.releaseFunds(dto.taskId, dto.submissionId);
+    // NOTE: This endpoint is DEPRECATED - contract uses pull-payment (workers call claimPayment)
+    // The blockchainService.releaseFunds() tries to call non-existent 'releaseEscrow' function
+    // Keeping for API compatibility but throwing clear error
+    throw new ForbiddenException(
+      'Manual escrow release not supported. Contract uses pull-payment: workers claim payments themselves via claimPayment(). Use POST /payments/escrow/claim instead.'
+    );
 
-    const transaction = await this.prisma.$transaction(async (tx) => {
-      const txRecord = await tx.transaction.create({
-        data: {
-          amount: task.reward,
-          tokenAddress: task.tokenAddress,
-          txHash,
-          status: 'RELEASED' as TransactionStatus,
-          type: 'ESCROW_RELEASE',
-          taskId: dto.taskId,
-          userId: submission.workerId,
-        },
-      });
-
-      await tx.task.update({
-        where: { id: dto.taskId },
-        data: { escrowStatus: 'RELEASED' as EscrowStatus },
-      });
-
-      this.logger.log(
-        `Escrow released for task ${dto.taskId}, submission ${dto.submissionId}: txHash=${txHash}`,
-      );
-
-      return txRecord;
-    });
-
-    await this.notificationsService.createNotification({
-      senderId: task.createdById,
-      receiverId: submission.workerId,
-      type: NotificationType.ESCROW_RELEASED,
-      title: 'Escrow Released',
-      message: `Payment has been released for your submission on task "${task.title}".`,
-      metadata: { taskId: dto.taskId, submissionId: dto.submissionId, txHash },
-    });
-
-    this.eventEmitter.emit('escrow.released', {
-      taskId: dto.taskId,
-      userId: submission.workerId,
-      submissionId: dto.submissionId,
-      txHash,
-    });
-
-    return this.mapTransactionResponse(transaction);
+    // const { txHash } = await this.blockchainService.releaseFunds(dto.taskId, dto.submissionId);
+    // ... rest of function is dead code after throw
   }
 
   async refundEscrow(userId: string, dto: RefundEscrowDto): Promise<TransactionResponse> {
     const task = await this.prisma.task.findUnique({ where: { id: dto.taskId } });
-
     if (!task || task.deletedAt) {
       throw new NotFoundException('Task not found');
     }
@@ -284,7 +255,84 @@ export class PaymentsService {
     return this.mapTransactionResponse(transaction);
   }
 
-  async findTransactions(query: QueryTransactionsDto): Promise<{
+  async claimEscrow(userId: string, dto: ClaimEscrowDto): Promise<TransactionResponse> {
+    const submission = await this.prisma.submission.findFirst({
+      where: { taskId: dto.taskId, workerId: userId },
+      include: { verification: true, task: true },
+    });
+
+    if (!submission || submission.task.deletedAt) {
+      throw new NotFoundException('Submission not found for this task');
+    }
+
+    if (submission.status !== 'APPROVED') {
+      throw new ForbiddenException('Cannot claim payment for a submission that is not approved');
+    }
+
+    if (!submission.verification || submission.verification.status !== 'PASSED') {
+      throw new ForbiddenException('Cannot claim payment without a passed verification');
+    }
+
+    if (submission.claimed) {
+      throw new ConflictException('Payment has already been claimed for this submission');
+    }
+
+    // Check if transaction already recorded (idempotency - blockchain event listener may have recorded it first)
+    const existingTx = await this.prisma.transaction.findFirst({
+      where: { txHash: dto.txHash.toLowerCase(), type: 'CLAIM_PAYMENT' },
+    });
+
+    if (existingTx) {
+      this.logger.log(`Claim payment already recorded for txHash: ${dto.txHash}`);
+      // Ensure submission is marked as claimed
+      if (!submission.claimed) {
+        await this.prisma.submission.update({
+          where: { id: submission.id },
+          data: { claimed: true },
+        });
+      }
+      return this.mapTransactionResponse(existingTx);
+    }
+
+    const transaction = await this.prisma.$transaction(async (tx) => {
+      const txRecord = await tx.transaction.create({
+        data: {
+          amount: submission.task.reward,
+          tokenAddress: submission.task.tokenAddress,
+          txHash: dto.txHash,
+          status: 'RELEASED' as TransactionStatus,
+          type: 'CLAIM_PAYMENT',
+          taskId: dto.taskId,
+          userId,
+        },
+      });
+
+      await tx.submission.update({
+        where: { id: submission.id },
+        data: { claimed: true },
+      });
+
+      this.logger.log(
+        `Payment claimed for task ${dto.taskId}, submission ${submission.id}: txHash=${dto.txHash}`,
+      );
+
+      return txRecord;
+    });
+
+    this.eventEmitter.emit('payment.claimed', {
+      taskId: dto.taskId,
+      userId,
+      submissionId: submission.id,
+      txHash: dto.txHash,
+    });
+
+    return this.mapTransactionResponse(transaction);
+  }
+
+  async findTransactions(
+    userId: string,
+    query: QueryTransactionsDto,
+  ): Promise<{
     data: TransactionResponse[];
     total: number;
     page: number;
@@ -295,7 +343,9 @@ export class PaymentsService {
     const limit = query.limit || 20;
     const skip = (page - 1) * limit;
 
-    const where: Prisma.TransactionWhereInput = {};
+    const where: Prisma.TransactionWhereInput = {
+      userId,
+    };
 
     if (query.status) {
       where.status = query.status as TransactionStatus;
@@ -307,10 +357,6 @@ export class PaymentsService {
 
     if (query.taskId) {
       where.taskId = query.taskId;
-    }
-
-    if (query.userId) {
-      where.userId = query.userId;
     }
 
     const [data, total] = await Promise.all([
@@ -356,12 +402,43 @@ export class PaymentsService {
 
     const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
 
-    const receipt = await publicClient.getTransactionReceipt({ hash: txHash as `0x${string}` });
+    // Add retry logic with exponential backoff for pending transactions
+    const maxRetries = 10;
+    const baseDelay = 1000; // 1 second
 
-    return {
-      confirmed: receipt.status === 'success',
-      blockNumber: receipt.blockNumber,
-    };
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const receipt = await publicClient.getTransactionReceipt({
+          hash: txHash as `0x${string}`,
+        });
+
+        if (receipt) {
+          return {
+            confirmed: receipt.status === 'success',
+            blockNumber: receipt.blockNumber,
+          };
+        }
+      } catch (error: any) {
+        // Transaction not found yet, wait and retry
+        if (
+          error.name === 'TransactionReceiptNotFoundError' ||
+          error.message?.includes('not been mined')
+        ) {
+          if (attempt < maxRetries - 1) {
+            const delay = baseDelay * Math.pow(2, attempt); // Exponential backoff
+            this.logger.log(
+              `Transaction ${txHash} not mined yet, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`,
+            );
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue;
+          }
+        }
+        throw error;
+      }
+    }
+
+    // If we get here, all retries exhausted
+    throw new Error(`Transaction ${txHash} not mined after ${maxRetries} attempts`);
   }
 
   private async validateEscrowTransaction(
