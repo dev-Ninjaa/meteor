@@ -112,6 +112,16 @@ export class WebSocketGateway implements OnGatewayConnection, OnGatewayDisconnec
       });
     }
 
+    // Public feed events - broadcast to all connected clients so the
+    // marketplace list and dashboards update without per-task subscriptions.
+    const publicFeedEvents = ['task.created', 'task.published', 'task.cancelled'];
+
+    for (const event of publicFeedEvents) {
+      this.eventEmitter.on(event, (payload: AppEvent) => {
+        this.server.emit(event, payload.data);
+      });
+    }
+
     const escrowEvents = ['escrow.locked', 'escrow.released', 'escrow.refunded'];
 
     for (const event of escrowEvents) {

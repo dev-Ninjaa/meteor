@@ -10,6 +10,15 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiConsumes, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { StorageService, UploadResult } from './storage.service';
 
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 @ApiTags('Storage')
 @Controller('storage')
 export class StorageController {
@@ -32,12 +41,11 @@ export class StorageController {
       },
     },
   })
-  async uploadFile(@UploadedFile() file: Express.Multer.File): Promise<UploadResult> {
+  async uploadFile(@UploadedFile() file: MulterFile): Promise<UploadResult> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
 
-    // Validate file size (max 50MB)
     const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       throw new BadRequestException('File too large. Maximum size is 50MB');
@@ -59,7 +67,7 @@ export class StorageController {
   @UseInterceptors(FileInterceptor('files'))
   @ApiOperation({ summary: 'Upload multiple files to IPFS' })
   @ApiConsumes('multipart/form-data')
-  async uploadMultipleFiles(@UploadedFile() files: Express.Multer.File[]): Promise<UploadResult[]> {
+  async uploadMultipleFiles(@UploadedFile() files: MulterFile[]): Promise<UploadResult[]> {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
     }

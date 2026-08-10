@@ -74,6 +74,7 @@ function createMockTask(
     verificationMode: 'AI' as VerificationMode,
     submissionType: 'text',
     submissionOptions: [],
+    attachments: null,
     allowAiVerification: true,
     manualVerificationRequired: false,
     escrowStatus: 'UNLOCKED' as EscrowStatus,
