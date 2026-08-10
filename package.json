@@ -27,7 +27,9 @@
     "abi:generate": "cd meteor-frontend && node -e \"const fs=require('fs'); const data=JSON.parse(fs.readFileSync('../meteor-contracts/out/BountyEscrow.sol/BountyEscrow.json','utf8')); fs.writeFileSync('src/lib/bounty-escrow.abi.json', JSON.stringify(data.abi))\"",
     "wagmi:generate": "cd meteor-frontend && bunx wagmi generate",
     "docker:up": "docker compose -f meteor-backend/docker-compose.yml up -d",
-    "docker:down": "docker compose -f meteor-backend/docker-compose.yml down"
+    "docker:down": "docker compose -f meteor-backend/docker-compose.yml down",
+    "docker:prod:up": "docker compose -f meteor-backend/docker-compose.prod.yml --env-file meteor-backend/.env.prod up -d",
+    "docker:prod:down": "docker compose -f meteor-backend/docker-compose.prod.yml down"
   },
   "devDependencies": {
     "typescript": "^5.8.0",
