@@ -33,7 +33,8 @@ services:
 
   app:
     build:
-      context: .
+      context: ..
+      dockerfile: meteor-backend/Dockerfile
       target: development
     container_name: meteor-app
     restart: unless-stopped
