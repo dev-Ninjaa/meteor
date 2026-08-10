@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardCreated, useDashboardSubmitted, useDashboardJoined } from '@/hooks/useDashboard';
 import { useDashboardAnalytics } from '@/hooks/useDashboardAnalytics';
 import { useAppStore } from '../../store/useAppStore';
@@ -24,6 +25,7 @@ import {
   Award,
 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { useSocket } from '@/hooks/useSocket';
 
 export const DashboardView: React.FC = () => {
   const { data: createdData } = useDashboardCreated();
@@ -32,8 +34,33 @@ export const DashboardView: React.FC = () => {
   const analytics = useDashboardAnalytics();
   const { setSelectedTask, setIsSolveModalOpen, setIsCreateModalOpen, setIsDetailModalOpen } = useAppStore();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const socket = useSocket();
   const [activeTab, setActiveTab] = useState<'created' | 'in_progress' | 'closed' | 'analytics'>('in_progress');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'IN_PROGRESS' | 'VERIFIED' | 'COMPLETED' | 'CANCELLED'>('ALL');
+
+  useEffect(() => {
+    const events = [
+      'task.created',
+      'task.published',
+      'task.cancelled',
+      'task.joined',
+      'task.left',
+      'submission.created',
+      'submission.approved',
+      'submission.rejected',
+      'verification.completed',
+      'escrow.locked',
+      'escrow.released',
+      'escrow.refunded',
+    ] as const;
+    const unsubscribes = events.map((event) =>
+      socket.on(event, () => {
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      }),
+    );
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+  }, [socket, queryClient]);
 
   // Get tasks for active tab
   const getTasksForTab = () => {
