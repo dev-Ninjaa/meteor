@@ -48,6 +48,45 @@ export async function signInWithEthereum(address: `0x${string}`): Promise<{ sign
   return { signature, message };
 }
 
+export interface SiweAuthResult {
+  accessToken: string;
+  refreshToken?: string;
+  user: { id: string; username?: string; walletAddress: string; reputation?: number };
+}
+
+// Single-flight SIWE login: exactly ONE nonce request + signature + verify per wallet,
+// shared by ApiClient's silent re-auth AND the wallet-connect flow. Prevents the two
+// flows from overwriting each other's nonce (which caused "Signature does not match").
+let siweAuthPromise: { address: string; promise: Promise<SiweAuthResult | null> } | null = null;
+
+export function siweLogin(address: `0x${string}`): Promise<SiweAuthResult | null> {
+  if (siweAuthPromise?.address === address) return siweAuthPromise.promise;
+  const promise = doSiweLogin(address);
+  siweAuthPromise = { address, promise };
+  promise.finally(() => {
+    if (siweAuthPromise?.address === address) siweAuthPromise = null;
+  });
+  return promise;
+}
+
+async function doSiweLogin(address: `0x${string}`): Promise<SiweAuthResult | null> {
+  try {
+    const { authApi, api } = await import('../lib/api');
+    const { signature } = await signInWithEthereum(address);
+    const verifyResponse = await authApi.verify({ address, signature, nonce: '' });
+    const data = verifyResponse?.data as SiweAuthResult | undefined;
+    if (!data?.accessToken) return null;
+    api.setToken(data.accessToken);
+    if (data.refreshToken && typeof window !== 'undefined') {
+      localStorage.setItem('refreshToken', data.refreshToken);
+    }
+    return data;
+  } catch (error) {
+    console.error('[siweLogin] Failed:', error);
+    return null;
+  }
+}
+
 export { parseEther, formatEther } from 'viem';
 
 // RainbowKit + Wagmi config - RainbowKit handles connectors internally

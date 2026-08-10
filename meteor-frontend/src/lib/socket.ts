@@ -17,6 +17,8 @@ type WsEventMap = {
   'escrow.released': { taskId: string; userId: string; submissionId: string; txHash: string };
   'escrow.refunded': { taskId: string; userId: string; txHash: string; reason: string };
   'notification.created': { userId: string; notification: Notification };
+  'connected': null;
+  'disconnected': string;
 };
 
 type EventCallback<T> = (data: T) => void;
@@ -25,12 +27,11 @@ class SocketClient {
   private socket: Socket | null = null;
   private listeners: Map<string, Set<Function>> = new Map();
 
-  connect(token: string) {
+  connect = (token: string) => {
     if (this.socket?.connected) return;
 
-    const wsUrl = (typeof window !== 'undefined' && (window as any).__ENV__?.VITE_WS_URL) 
-      || 'http://localhost:4000';
-    
+    const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:4000';
+
     this.socket = io(wsUrl, {
       auth: { token },
       transports: ['websocket', 'polling'],
@@ -71,43 +72,43 @@ class SocketClient {
     });
   }
 
-  disconnect() {
+  disconnect = () => {
     this.socket?.disconnect();
     this.socket = null;
   }
 
   // Room subscriptions
-  subscribeToUser(userId: string) {
+  subscribeToUser = (userId: string) => {
     this.socket?.emit('subscribe:user', userId);
   }
 
-  unsubscribeFromUser(userId: string) {
+  unsubscribeFromUser = (userId: string) => {
     this.socket?.emit('unsubscribe:user', userId);
   }
 
-  subscribeToTask(taskId: string) {
+  subscribeToTask = (taskId: string) => {
     this.socket?.emit('subscribe:task', taskId);
   }
 
-  unsubscribeFromTask(taskId: string) {
+  unsubscribeFromTask = (taskId: string) => {
     this.socket?.emit('unsubscribe:task', taskId);
   }
 
   // Event listener management
-  on<K extends keyof WsEventMap>(event: K, callback: EventCallback<WsEventMap[K]>) {
+  on = <K extends keyof WsEventMap>(event: K, callback: EventCallback<WsEventMap[K]>) => {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)!.add(callback);
-    
+
     return () => this.off(event, callback);
   }
 
-  off<K extends keyof WsEventMap>(event: K, callback: EventCallback<WsEventMap[K]>) {
+  off = <K extends keyof WsEventMap>(event: K, callback: EventCallback<WsEventMap[K]>) => {
     this.listeners.get(event)?.delete(callback);
   }
 
-  private emit(event: string, data: any) {
+  private emit = (event: string, data: any) => {
     this.listeners.get(event)?.forEach(cb => cb(data));
   }
 
