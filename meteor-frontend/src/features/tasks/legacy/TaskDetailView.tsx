@@ -7,7 +7,7 @@ import { VerificationBadge } from '@/components/shared/VerificationBadge';
 import { ProgressIndicator } from '@/components/shared/ProgressIndicator';
 import { SubmissionRenderer } from '@/components/shared/SubmissionRenderer';
 import { VerificationLiveStatus } from '@/components/shared/VerificationLiveStatus';
-import { WalletConnectButton } from '@/components/ui/WalletConnectButton';
+import { WalletConnectButton } from '@/features/auth/WalletConnectButton';
 import { useWriteBountyEscrowClaimPayment } from '@/lib/generated';
 import { useAccount } from 'wagmi';
 import { cn } from '@/lib/utils';

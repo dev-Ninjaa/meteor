@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
 
-interface ModalWrapperProps {
+interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -11,14 +11,14 @@ interface ModalWrapperProps {
   className?: string;
 }
 
-export function ModalWrapper({
+export function Modal({
   isOpen,
   onClose,
   title,
   subtitle,
   children,
   className = '',
-}: ModalWrapperProps) {
+}: ModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (

@@ -6,7 +6,8 @@ import {
   useMarkAllRead, 
   useDeleteNotification 
 } from '@/hooks/useNotifications';
-import { useSocket } from '@/hooks/useSocket';
+import { useNotificationEvents } from '@/hooks/useSocket';
+import { useAuth, useMe } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, X, Check, CheckCircle2, Clock, Zap, Users, AlertCircle, MessageSquare, ExternalLink, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,44 +35,29 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
-  const { data: notificationsData, refetch } = useNotifications();
-  const { data: unreadCountData, refetch: refetchCount } = useUnreadCount();
+  const { getToken } = useAuth();
+  const hasToken = !!getToken();
+  const { data: currentUser } = useMe({ enabled: hasToken });
+  const { data: notificationsData, refetch } = useNotifications(undefined, { enabled: hasToken });
+  const { data: unreadCountData, refetch: refetchCount } = useUnreadCount({ enabled: hasToken });
   
   const markReadMutation = useMarkRead();
   const markAllReadMutation = useMarkAllRead();
   const deleteMutation = useDeleteNotification();
   
-  const socket = useSocket();
+  const { onNotification } = useNotificationEvents(currentUser?.id ?? null);
   
   const notifications = notificationsData?.data || [];
   const unreadCount = unreadCountData ?? 0;
 
-  // Subscribe to user notifications via socket
-  useEffect(() => {
-    if (socket.connected) {
-      socket.subscribeToUser('current-user-id'); // TODO: get actual user ID
-    }
-    return () => {
-      if (socket.connected) {
-        socket.unsubscribeFromUser('current-user-id');
-      }
-    };
-  }, [socket.connected]);
-
   // Listen for new notifications
   useEffect(() => {
-    if (!socket.connected) return;
-    
-    const handleNotification = (notification: any) => {
+    const unsubscribe = onNotification(() => {
       refetch();
       refetchCount();
-    };
-
-    socket.on('notification.created', handleNotification);
-    return () => {
-      socket.off('notification.created', handleNotification);
-    };
-  }, [socket.connected, refetch, refetchCount]);
+    });
+    return unsubscribe;
+  }, [onNotification, refetch, refetchCount]);
 
   const handleMarkRead = async (id: string) => {
     try {
@@ -126,16 +112,15 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-start justify-end p-4 md:p-6 pt-28">
-        <div className="w-full max-w-sm animate-in slide-in-from-right duration-200" onClick={onClose}>
-          {/* Backdrop */}
+      <div className="fixed inset-0 z-50 flex items-start justify-end p-4 md:p-6 pt-28 pointer-events-auto">
+        <div className="w-full max-w-sm animate-in slide-in-from-right duration-200">
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-          
-          {/* Panel */}
+
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 50 }}
+            onClick={(e) => e.stopPropagation()}
             className="liquid-glass rounded-3xl border border-white/10 bg-black/95 text-white shadow-2xl overflow-hidden max-h-[calc(100vh-120px)] flex flex-col"
           >
             {/* Header */}

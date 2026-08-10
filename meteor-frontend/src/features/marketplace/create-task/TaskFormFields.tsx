@@ -1,4 +1,5 @@
-import { TaskCategory, SubmissionType, VerificationType } from '../../types';
+import { TaskCategory, SubmissionType, VerificationType } from '../../../types';
+import { SubmissionRenderer } from '../../../components/shared/SubmissionRenderer';
 
 interface TaskFormState {
   prompt: string;
@@ -9,10 +10,12 @@ interface TaskFormState {
   duration: string;
   category: TaskCategory;
   submissionType: SubmissionType;
+  submissionOptions: string[];
   verificationType: VerificationType;
   autoPay: boolean;
   consensusThreshold: string;
   visibility: 'Public' | 'Private';
+  attachments: any[];
 }
 
 interface TaskFormFieldsProps {
@@ -65,11 +68,40 @@ export function TaskFormFields({ form }: TaskFormFieldsProps) {
           <option value="text">Text Response</option>
           <option value="multiple_choice">Multiple Choice</option>
           <option value="rating">Rating (1-5 Stars)</option>
-          <option value="image">Image Upload</option>
-          <option value="gps">GPS / Location Photo</option>
-          <option value="screen_recording">Screen Recording</option>
+          <option value="file">File Upload (Any)</option>
+          <option value="image">Image</option>
+          <option value="video">Video</option>
+          <option value="audio">Audio</option>
+          <option value="document">Document</option>
           <option value="checklist">Verification Checklist</option>
         </select>
+      </div>
+
+      {(form.submissionType === 'multiple_choice' || form.submissionType === 'checklist') && (
+        <div className="sm:col-span-2">
+          <label className="text-xs font-mono text-white/60 mb-1 block">
+            Submission Options <span className="text-white/40">(comma-separated)</span>
+          </label>
+          <input
+            type="text"
+            value={(form.submissionOptions || []).join(', ')}
+            onChange={(e) => form.setField('submissionOptions', e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
+            placeholder="Option A, Option B, Option C"
+            className="w-full bg-[#111113] border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#836EF9]"
+          />
+        </div>
+      )}
+
+      {/* Creator Attachments (Optional) */}
+      <div className="sm:col-span-2">
+        <label className="text-xs font-mono text-white/60 mb-1 block">
+          Attachments (Optional) <span className="text-white/40">— images, docs, reference files for workers</span>
+        </label>
+        <SubmissionRenderer
+          type="file"
+          value={form.attachments || []}
+          onChange={(files) => form.setField('attachments', files as any)}
+        />
       </div>
 
       <div>

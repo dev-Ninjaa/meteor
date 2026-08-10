@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Zap, Users, Clock, ShieldCheck, ArrowUpRight, DollarSign, CheckCircle2, ClipboardCheck } from 'lucide-react';
+import { useAccount } from 'wagmi';
 import { TaskItem } from '../../types';
-import { VerificationBadge } from '../shared/VerificationBadge';
-import { ProgressIndicator } from '../shared/ProgressIndicator';
+import { VerificationBadge } from '../../components/shared/VerificationBadge';
+import { ProgressIndicator } from '../../components/shared/ProgressIndicator';
 import { useAppStore } from '../../store/useAppStore';
 import { submissionsApi } from '../../lib/api';
 import { useToast } from '@/hooks/useToast';
-import { useJoinTask } from '@/hooks/useTasks';
+import { useMe } from '@/hooks/useAuth';
+import { useJoinTask, useTask } from '@/hooks/useTasks';
+import { useSocket } from '@/hooks/useSocket';
+import { usePayments } from '@/hooks/usePayments';
+import { useWriteBountyEscrowClaimPayment } from '@/lib/generated';
+import { getGasLimit } from '@/lib/utils';
 
 interface TaskDetailModalProps {
   task: TaskItem | null;
@@ -34,7 +41,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   const verificationType = (verificationTypeMap[task.verificationMode] || 'AI Verification') as import('../../types').VerificationType;
 
-  const { setManualVerificationData, setIsManualVerifyModalOpen, walletAddress, userId } = useAppStore();
+  const { setManualVerificationData, setIsManualVerifyModalOpen } = useAppStore();
+  const { data: currentUser } = useMe();
   const { toast } = useToast();
   const { mutate: joinTask } = useJoinTask();
   const [isJoining, setIsJoining] = useState(false);
@@ -63,8 +71,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const hasClaimed = task.mySubmission?.claimed === true;
   const canClaim = isCompleted && hasSubmission && isVerified && !hasClaimed;
 
-  // Check if current user is the creator
-  const isCreator = task.createdById === userId;
+  // Check if current user is the creator (createdById is a DB UUID → compare with user id)
+  const isCreator = task.createdById === currentUser?.id;
 
   // Render action buttons based on task state
   const renderActionButtons = () => {
@@ -148,15 +156,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       );
     }
 
-    if (task.mySubmission?.claimed === true && canClaim) {
-      return (
-        <div className="flex-1 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold flex items-center justify-center gap-2">
-          <CheckCircle2 className="w-5 h-5" />
-          <span>Payment Claimed ✓</span>
-        </div>
-      );
-    }
-
     return null;
   };
 
@@ -168,7 +167,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="liquid-glass rounded-3xl p-6 sm:p-8 max-w-2xl w-full border border-white/20 bg-black/90 text-white shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar"
+            className="liquid-glass rounded-3xl p-4 sm:p-6 lg:p-8 max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl w-full mx-2 sm:mx-4 border border-white/20 bg-black/90 text-white shadow-2xl relative max-h-[90vh] overflow-y-auto no-scrollbar"
           >
             {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-white/10">
@@ -188,18 +187,18 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
             <div className="mt-6 space-y-6">
               {/* Title & Reward */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full bg-white/5 text-white/70 border border-white/10">
                       {task.category}
                     </span>
                   </div>
-                  <h2 className="font-heading italic text-3xl text-white leading-tight">{task.title}</h2>
+                  <h2 className="font-heading italic text-xl sm:text-2xl lg:text-3xl text-white leading-tight truncate">{task.title}</h2>
                 </div>
                 <div className="flex items-center gap-2 text-white/50 shrink-0">
                   <Zap className="w-5 h-5 text-[#836EF9]" />
-                  <span className="font-mono text-xl font-bold">{task.reward}</span>
+                  <span className="font-mono text-lg sm:text-xl font-bold">{task.reward}</span>
                   <span className="text-white/40">MON</span>
                 </div>
               </div>
@@ -225,7 +224,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               )}
 
               {/* Task Details Grid */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="p-4 rounded-2xl bg-[#111113] border border-white/10">
                   <div className="flex items-center gap-2 text-white/50 text-xs mb-1">
                     <Zap className="w-3.5 h-3.5 text-[#836EF9]" />
@@ -290,8 +289,8 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         }`} />
                         <span className="font-mono text-white/80">Verification: {task.mySubmission.verification.status}</span>
                       </div>
-                      {task.mySubmission.verification.score && (
-                        <div className="text-xs text-white/60">Score: {task.mySubmission.verification.score}/100</div>
+                      {task.mySubmission.verification.aiScore !== null && (
+                        <div className="text-xs text-white/60">Score: {task.mySubmission.verification.aiScore}/100</div>
                       )}
                     </div>
                   )}
@@ -299,10 +298,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               )}
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-white/10">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t border-white/10">
                 <button
                   onClick={onClose}
-                  className="flex-1 py-3 rounded-2xl bg-white/5 hover:bg-white text-white hover:text-black font-semibold transition-all border border-white/10 flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-2xl bg-white/5 hover:bg-white text-white hover:text-black font-semibold transition-all border border-white/10 flex items-center justify-center gap-2 text-sm sm:text-base"
                 >
                   <span>Close</span>
                 </button>
@@ -316,3 +315,124 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       </AnimatePresence>
   );
 };
+
+export const TaskDetailModalWrapper: React.FC = () => {
+  const { selectedTask, isDetailModalOpen, setIsDetailModalOpen, setIsSolveModalOpen } = useAppStore();
+  const { claimPayment } = usePayments();
+  const { toast } = useToast();
+  const { address, connector, chain } = useAccount();
+  const { writeContractAsync: claimOnContract } = useWriteBountyEscrowClaimPayment();
+  const [isClaiming, setIsClaiming] = useState(false);
+  const queryClient = useQueryClient();
+  const socket = useSocket();
+  const taskId = selectedTask?.id ?? null;
+  const { data: freshTask } = useTask(taskId ?? '');
+
+  useEffect(() => {
+    if (!taskId || !isDetailModalOpen) return;
+    socket.subscribeToTask(taskId);
+    return () => socket.unsubscribeFromTask(taskId);
+  }, [taskId, isDetailModalOpen, socket]);
+
+  useEffect(() => {
+    if (freshTask && isDetailModalOpen) {
+      useAppStore.getState().setSelectedTask(freshTask);
+    }
+  }, [freshTask, isDetailModalOpen]);
+
+  useEffect(() => {
+    if (!taskId || !isDetailModalOpen) return;
+    const events = [
+      'task.updated',
+      'submission.created',
+      'submission.approved',
+      'submission.rejected',
+      'verification.completed',
+      'escrow.locked',
+      'escrow.released',
+      'escrow.refunded',
+    ] as const;
+    const unsubscribes = events.map((event) =>
+      socket.on(event, (data: any) => {
+        if (data?.taskId === taskId) {
+          queryClient.invalidateQueries({ queryKey: ['task', taskId] });
+          queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+        }
+      }),
+    );
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+  }, [taskId, isDetailModalOpen, socket, queryClient]);
+
+  if (!selectedTask) return null;
+
+  const handleClaim = async (task: TaskItem) => {
+    if (!address || !connector) {
+      toast('Connect your wallet to claim payment', 'destructive');
+      return;
+    }
+    
+    // Check if we're on the correct chain (Monad Testnet - 10143)
+    if (chain?.id !== 10143) {
+      toast('Please switch to Monad Testnet (Chain ID: 10143)', 'destructive');
+      return;
+    }
+    
+    setIsClaiming(true);
+    try {
+      // Sign claimPayment on the escrow contract (taskId UUID → bytes32)
+      const { keccak256, toHex } = await import('viem');
+      const taskIdBytes32 = keccak256(toHex(task.id));
+      const txHash = await claimOnContract({
+        args: [taskIdBytes32 as `0x${string}`],
+        gas: getGasLimit('CLAIM_PAYMENT'),
+      });
+
+      await claimPayment.mutateAsync({ taskId: task.id, txHash });
+
+      // Invalidate queries to refresh task data (mySubmission.claimed will be updated)
+      queryClient.invalidateQueries({ queryKey: ['task', task.id] });
+      queryClient.invalidateQueries({ queryKey: ['marketplace'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+
+      toast('Payment claimed successfully!', 'success');
+      setIsDetailModalOpen(false);
+    } catch (err: any) {
+      console.error('Claim payment failed:', err);
+      
+      // Handle specific wallet authorization errors
+      if (err?.name === 'UnauthorizedProviderError' || 
+          err?.message?.includes('not been authorized') ||
+          err?.message?.includes('User rejected') ||
+          err?.cause?.name === 'UnauthorizedProviderError') {
+        toast('Wallet connection required. Please reconnect your wallet and try again.', 'destructive');
+      } else if (err?.message?.includes('Already claimed') || err?.message?.includes('Not eligible')) {
+        toast('Payment already claimed or not eligible', 'destructive');
+      } else if (err?.message?.includes('Exceeds locked amount') || err?.message?.includes('Task cancelled')) {
+        toast('Task escrow issue - contact support', 'destructive');
+      } else {
+        const message = err?.response?.data?.message ?? err?.shortMessage ?? 'Failed to claim payment. Please try again.';
+        toast(message, 'destructive');
+      }
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
+  return (
+    <TaskDetailModal
+      task={selectedTask}
+      isOpen={isDetailModalOpen}
+      onClose={() => setIsDetailModalOpen(false)}
+      onSolve={(task) => {
+        setIsDetailModalOpen(false);
+        setIsSolveModalOpen(true);
+      }}
+      onClaim={(task) => {
+        handleClaim(task);
+      }}
+    />
+  );
+};
+
+export default TaskDetailModalWrapper;

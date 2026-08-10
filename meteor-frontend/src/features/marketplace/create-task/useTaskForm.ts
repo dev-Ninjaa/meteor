@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useGenerateTask } from '../../hooks/useAI';
-import { useCreateTask, usePublishTask } from '../../hooks/useTasks';
-import { TaskCategory, SubmissionType, VerificationType } from '../../types';
+import { useGenerateTask } from '../../../hooks/useAI';
+import { useCreateTask, usePublishTask } from '../../../hooks/useTasks';
+import { TaskCategory, SubmissionType, VerificationType } from '../../../types';
 
 export interface TaskFormState {
   prompt: string;
@@ -12,10 +12,12 @@ export interface TaskFormState {
   duration: string;
   category: TaskCategory;
   submissionType: SubmissionType;
+  submissionOptions: string[];
   verificationType: VerificationType;
   autoPay: boolean;
   consensusThreshold: string;
   visibility: 'Public' | 'Private';
+  attachments: any[];
 }
 
 export function useTaskForm() {
@@ -28,10 +30,12 @@ export function useTaskForm() {
     duration: '10 mins',
     category: 'AI Verification',
     submissionType: 'text',
+    submissionOptions: [],
     verificationType: 'AI Verification',
     autoPay: true,
     consensusThreshold: '85%',
     visibility: 'Public',
+    attachments: [],
   });
 
   const setField = useCallback(<K extends keyof TaskFormState>(field: K, value: TaskFormState[K]) => {
@@ -63,10 +67,11 @@ export function usePublishFlow({
     setIsAiAnalyzing(true);
 
     try {
-      const suggestion = await generateTaskMutation.mutateAsync({
+      const response = await generateTaskMutation.mutateAsync({
         prompt: form.prompt,
         category: form.category,
       });
+      const suggestion = response.data;
 
       // Apply AI suggestions to form
       if (suggestion.title) form.setField('title', suggestion.title);
@@ -104,9 +109,12 @@ export function usePublishFlow({
         workersRequired: parseInt(form.workers, 10) || 5,
         maxWorkers: parseInt(form.workers, 10) || 5,
         verificationMode: form.verificationType === 'AI Verification' ? 'AI' : form.verificationType === 'Human Review' ? 'MANUAL' : 'BOTH',
+        submissionType: form.submissionType,
+        submissionOptions: form.submissionOptions || [],
         allowAiVerification: true,
         manualVerificationRequired: form.verificationType === 'Human Review',
         tokenAddress: undefined,
+        attachments: form.attachments || [],
       },
       {
         onSuccess: (createdTask) => {

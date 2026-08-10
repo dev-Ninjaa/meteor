@@ -7,7 +7,7 @@ import { X, ShieldCheck, ArrowRight } from 'lucide-react';
 import { bountyEscrowAbi, bountyEscrowAddress } from '@/lib/generated';
 import { usePayments } from '@/hooks/usePayments';
 import { useAppStore } from '../../store/useAppStore';
-import { ModalWrapper } from '../ui/ModalWrapper';
+import { Modal } from '../../components/ui/Modal';
 
 interface EscrowLockModalProps {
   data: {
@@ -36,7 +36,7 @@ export function EscrowLockModal({ data, isOpen, onClose }: EscrowLockModalProps)
   return (
     <AnimatePresence>
       {isOpen && (
-        <ModalWrapper isOpen={isOpen} onClose={onClose} title="Lock Escrow" subtitle="Sign transaction to fund the escrow on Monad">
+        <Modal isOpen={isOpen} onClose={onClose} title="Lock Escrow" subtitle="Sign transaction to fund the escrow on Monad">
           <div className="mt-6 space-y-6">
             <div className="p-4 rounded-2xl bg-[#111113] border border-white/10">
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -96,7 +96,7 @@ export function EscrowLockModal({ data, isOpen, onClose }: EscrowLockModalProps)
               </button>
             </div>
           </div>
-        </ModalWrapper>
+        </Modal>
       )}
     </AnimatePresence>
   );
