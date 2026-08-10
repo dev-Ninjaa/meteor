@@ -38,7 +38,10 @@ export class QueryTasksDto {
   @IsOptional()
   tag?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by escrow status', enum: ['UNLOCKED', 'LOCKED', 'RELEASED', 'REFUNDED'] })
+  @ApiPropertyOptional({
+    description: 'Filter by escrow status',
+    enum: ['UNLOCKED', 'LOCKED', 'RELEASED', 'REFUNDED'],
+  })
   @IsString()
   @IsOptional()
   @IsEnum(['UNLOCKED', 'LOCKED', 'RELEASED', 'REFUNDED'])

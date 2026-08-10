@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { SubmissionResponseDto } from '../../submissions/dto/submission-response.dto';
 
 export class TaskResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
@@ -43,6 +44,12 @@ export class TaskResponseDto {
   @ApiProperty({ example: 'AI' })
   verificationMode!: string;
 
+  @ApiProperty({ example: 'text' })
+  submissionType!: string;
+
+  @ApiProperty({ example: ['Option A', 'Option B'] })
+  submissionOptions!: string[];
+
   @ApiProperty({ example: true })
   allowAiVerification!: boolean;
 
@@ -60,4 +67,7 @@ export class TaskResponseDto {
 
   @ApiProperty({ example: '2026-07-29T12:00:00.000Z' })
   updatedAt!: Date;
+
+  @ApiPropertyOptional({ type: SubmissionResponseDto })
+  mySubmission?: SubmissionResponseDto | null;
 }

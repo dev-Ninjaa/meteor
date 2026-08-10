@@ -67,6 +67,8 @@ function createMockTask(
     workersCompleted: 0,
     maxWorkers: 5,
     verificationMode: 'AI' as VerificationMode,
+    submissionType: 'text',
+    submissionOptions: [],
     allowAiVerification: true,
     manualVerificationRequired: false,
     escrowStatus: 'UNLOCKED' as EscrowStatus,

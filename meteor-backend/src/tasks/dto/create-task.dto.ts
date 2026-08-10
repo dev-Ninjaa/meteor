@@ -72,6 +72,24 @@ export class CreateTaskDto {
   @IsEnum(['AI', 'MANUAL', 'BOTH'])
   verificationMode?: string;
 
+  @ApiPropertyOptional({
+    description: 'Submission type accepted for this task',
+    enum: ['text', 'multiple_choice', 'rating', 'file', 'checklist'],
+    default: 'text',
+  })
+  @IsString()
+  @IsOptional()
+  submissionType?: string;
+
+  @ApiPropertyOptional({
+    description: 'Options for multiple_choice / checklist submission types',
+    example: ['Option A', 'Option B'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  submissionOptions?: string[];
+
   @ApiPropertyOptional({ description: 'Allow AI verification', default: true })
   @IsBoolean()
   @IsOptional()
@@ -81,4 +99,13 @@ export class CreateTaskDto {
   @IsBoolean()
   @IsOptional()
   manualVerificationRequired?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Creator attachments (reference files for workers)',
+    type: 'array',
+    items: { type: 'object' },
+  })
+  @IsArray()
+  @IsOptional()
+  attachments?: any[];
 }

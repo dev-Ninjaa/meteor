@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -7,6 +17,7 @@ import { QueryTasksDto } from './dto/query-tasks.dto';
 import { TaskResponseDto } from './dto/task-response.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
+import { OptionalJwtAuthGuard } from '../common/guards/optional-jwt-auth.guard';
 
 @ApiTags('Tasks')
 @Controller('tasks')
@@ -40,11 +51,15 @@ export class TasksController {
 
   @Get(':id')
   @Public()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'Get a task by ID' })
   @ApiResponse({ status: 200, description: 'Task found', type: TaskResponseDto })
   @ApiResponse({ status: 404, description: 'Task not found' })
-  async findOne(@Param('id') id: string): Promise<TaskResponseDto> {
-    return this.tasksService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser('sub') userId?: string,
+  ): Promise<TaskResponseDto> {
+    return this.tasksService.findOne(id, userId);
   }
 
   @Patch(':id')

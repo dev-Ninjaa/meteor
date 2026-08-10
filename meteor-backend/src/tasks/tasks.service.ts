@@ -38,6 +38,8 @@ export class TasksService {
         workersRequired: dto.workersRequired,
         maxWorkers: dto.maxWorkers,
         verificationMode: (dto.verificationMode as VerificationMode) || 'AI',
+        submissionType: dto.submissionType || 'text',
+        submissionOptions: dto.submissionOptions || [],
         allowAiVerification: dto.allowAiVerification ?? true,
         manualVerificationRequired: dto.manualVerificationRequired ?? false,
         createdById: userId,
@@ -111,7 +113,7 @@ export class TasksService {
     ]);
 
     return {
-      data: data.map(this.mapTaskResponse),
+      data: data.map((task) => this.mapTaskResponse(task)),
       total,
       page,
       limit,
@@ -119,7 +121,7 @@ export class TasksService {
     };
   }
 
-  async findOne(id: string): Promise<TaskResponseDto> {
+  async findOne(id: string, userId?: string): Promise<TaskResponseDto> {
     const task = await this.prisma.task.findUnique({
       where: { id },
     });
@@ -128,7 +130,16 @@ export class TasksService {
       throw new NotFoundException('Task not found');
     }
 
-    return this.mapTaskResponse(task);
+    if (!userId) {
+      return this.mapTaskResponse(task);
+    }
+
+    const submission = await this.prisma.submission.findFirst({
+      where: { taskId: id, workerId: userId },
+      include: { verification: true },
+    });
+
+    return this.mapTaskResponse(task, submission ?? null);
   }
 
   async update(userId: string, id: string, dto: UpdateTaskDto): Promise<TaskResponseDto> {
@@ -404,6 +415,8 @@ export class TasksService {
     workersCompleted: number;
     maxWorkers: number;
     verificationMode: VerificationMode;
+    submissionType: string;
+    submissionOptions: string[];
     allowAiVerification: boolean;
     manualVerificationRequired: boolean;
     escrowStatus: EscrowStatus;
@@ -423,29 +436,55 @@ export class TasksService {
     return task;
   }
 
-  private mapTaskResponse(task: {
-    id: string;
-    title: string;
-    description: string;
-    reward: Prisma.Decimal;
-    tokenAddress: string | null;
-    status: TaskStatus;
-    aiGenerated: boolean;
-    aiPrompt: string | null;
-    tags: string[];
-    workersRequired: number;
-    workersJoined: number;
-    workersCompleted: number;
-    maxWorkers: number;
-    verificationMode: VerificationMode;
-    allowAiVerification: boolean;
-    manualVerificationRequired: boolean;
-    escrowStatus: EscrowStatus;
-    createdById: string;
-    createdAt: Date;
-    updatedAt: Date;
-    deletedAt: Date | null;
-  }): TaskResponseDto {
+  private mapTaskResponse(
+    task: {
+      id: string;
+      title: string;
+      description: string;
+      reward: Prisma.Decimal;
+      tokenAddress: string | null;
+      status: TaskStatus;
+      aiGenerated: boolean;
+      aiPrompt: string | null;
+      tags: string[];
+      workersRequired: number;
+      workersJoined: number;
+      workersCompleted: number;
+      maxWorkers: number;
+      verificationMode: VerificationMode;
+      submissionType: string;
+      submissionOptions: string[];
+      allowAiVerification: boolean;
+      manualVerificationRequired: boolean;
+      escrowStatus: EscrowStatus;
+      createdById: string;
+      createdAt: Date;
+      updatedAt: Date;
+      deletedAt: Date | null;
+    },
+    submission?: {
+      id: string;
+      content: string;
+      proof: string | null;
+      submissionType: string | null;
+      status: string;
+      claimed: boolean;
+      workerId: string;
+      aiScore: number | null;
+      aiFeedback: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      verification: {
+        id: string;
+        status: string;
+        aiScore: number | null;
+        aiFeedback: string | null;
+        manualNotes: string | null;
+        isManual: boolean;
+        verifiedById: string | null;
+      } | null;
+    } | null,
+  ): TaskResponseDto {
     return {
       id: task.id,
       title: task.title,
@@ -460,12 +499,41 @@ export class TasksService {
       workersCompleted: task.workersCompleted,
       maxWorkers: task.maxWorkers,
       verificationMode: task.verificationMode,
+      submissionType: task.submissionType,
+      submissionOptions: task.submissionOptions,
       allowAiVerification: task.allowAiVerification,
       manualVerificationRequired: task.manualVerificationRequired,
       escrowStatus: task.escrowStatus,
       createdById: task.createdById,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
+      mySubmission: submission
+        ? {
+            id: submission.id,
+            content: submission.content,
+            proof: submission.proof,
+            submissionType: submission.submissionType,
+            status: submission.status,
+            claimed: submission.claimed,
+            aiScore: submission.aiScore,
+            aiFeedback: submission.aiFeedback,
+            taskId: task.id,
+            workerId: submission.workerId,
+            createdAt: submission.createdAt,
+            updatedAt: submission.updatedAt,
+            verification: submission.verification
+              ? {
+                  id: submission.verification.id,
+                  status: submission.verification.status,
+                  aiScore: submission.verification.aiScore,
+                  aiFeedback: submission.verification.aiFeedback,
+                  manualNotes: submission.verification.manualNotes,
+                  isManual: submission.verification.isManual,
+                  verifiedById: submission.verification.verifiedById,
+                }
+              : null,
+          }
+        : null,
     };
   }
 }
