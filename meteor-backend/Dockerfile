@@ -1,6 +1,6 @@
 FROM oven/bun:1.3.5-alpine AS base
 WORKDIR /usr/src/app
-COPY package.json bun.lock ./
+COPY package.json ../bun.lock ./
 
 # Development: allow lockfile updates for velocity
 FROM base AS development
@@ -12,7 +12,7 @@ CMD ["sh", "-c", "bunx prisma migrate deploy && bun run start:dev"]
 
 # Production build: enforce exact lockfile versions
 FROM base AS build
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --filter "./meteor-backend"
 COPY . .
 RUN bunx prisma@6.19.3 generate
 RUN bun run build
