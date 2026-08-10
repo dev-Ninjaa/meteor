@@ -22,6 +22,6 @@ export const VERIFICATION_MODES: VerificationMode[] = ['AI', 'MANUAL', 'BOTH'];
 
 export const VERIFICATION_MODE_LABELS: Record<VerificationMode, string> = {
   AI: 'AI Verification',
-  MANUAL: 'Human Review',
+  MANUAL: 'Creator Review',
   BOTH: 'Hybrid',
 };

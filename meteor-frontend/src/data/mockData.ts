@@ -4,22 +4,14 @@ export type SubmissionType =
   | 'text'
   | 'multiple_choice'
   | 'rating'
-  | 'image'
-  | 'video'
-  | 'audio'
   | 'file'
-  | 'link'
-  | 'checklist'
-  | 'multi_field'
-  | 'gps'
-  | 'screen_recording';
+  | 'checklist';
 
 export type VerificationType =
   | 'AI Verification'
-  | 'Human Review'
+  | 'Creator Review'
   | 'AI First'
   | 'Consensus'
-  | 'Creator Review'
   | 'Hybrid';
 
 export interface TaskItem {
@@ -151,8 +143,8 @@ export const INITIAL_TASKS: TaskItem[] = [
     difficulty: 'Easy',
     creator: '0x3A2...81F0 (MapData Inc)',
     status: 'PUBLISHED',
-    submissionType: 'gps',
-    verificationType: 'Human Review',
+    submissionType: 'file',
+    verificationType: 'Creator Review',
     createdAt: '5 mins ago',
     aiSummary: {
       overallSentiment: 'Verified (100% Match)',
@@ -242,7 +234,7 @@ export const INITIAL_TASKS: TaskItem[] = [
     difficulty: 'Medium',
     creator: '0x55E...77A2 (GeoAI)',
     status: 'PUBLISHED',
-    submissionType: 'screen_recording',
+    submissionType: 'file',
     verificationType: 'Hybrid',
     createdAt: '22 mins ago',
   },
