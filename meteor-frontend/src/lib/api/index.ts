@@ -8,3 +8,4 @@ export * from './payments.api';
 export * from './notifications.api';
 export * from './ai.api';
 export * from './dashboard.api';
+export * from './storage.api';

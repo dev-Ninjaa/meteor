@@ -1,5 +1,5 @@
 import { api } from './index';
-import type { Transaction, CreateEscrowDto, ReleaseEscrowDto, RefundEscrowDto, QueryTransactionsDto } from '../../types/payment';
+import type { Transaction, CreateEscrowDto, ReleaseEscrowDto, RefundEscrowDto, ClaimEscrowDto, QueryTransactionsDto } from '../../types/payment';
 import type { PaginatedResponse } from '../../types';
 
 // Backend returns wrapped responses: {statusCode, message, data: T, ...}
@@ -12,6 +12,9 @@ export const paymentsApi = {
 
   refundEscrow: (data: RefundEscrowDto) => 
     api.post<{ statusCode: number; message: string; data: Transaction; timestamp: string; path: string }>('/payments/escrow/refund', data),
+
+  claimEscrow: (data: ClaimEscrowDto) => 
+    api.post<{ statusCode: number; message: string; data: Transaction; timestamp: string; path: string }>('/payments/escrow/claim', data),
 
   list: (params?: QueryTransactionsDto) => 
     api.get<{ statusCode: number; message: string; data: PaginatedResponse<Transaction>; timestamp: string; path: string }>('/payments/transactions', params),

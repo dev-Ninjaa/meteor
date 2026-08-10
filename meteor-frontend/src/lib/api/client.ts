@@ -110,9 +110,35 @@ export class ApiClient {
   }
 
   private async doRefreshAuth(): Promise<string | null> {
+    // Preferred path: silent refresh using the stored refresh token.
+    // Only fall back to SIWE (full wallet re-login) when the refresh token
+    // is missing or has expired.
+    const refreshToken = this.getStoredRefreshToken();
+    if (refreshToken) {
+      try {
+        const refreshResponse = await authApi.refresh({ refreshToken });
+        const accessToken = refreshResponse?.data?.accessToken;
+        const newRefreshToken = refreshResponse?.data?.refreshToken;
+
+        if (accessToken) {
+          this.setToken(accessToken);
+          // Backend rotates the refresh token on every refresh - persist it.
+          if (newRefreshToken && typeof window !== 'undefined') {
+            localStorage.setItem('refreshToken', newRefreshToken);
+          }
+          return accessToken;
+        }
+      } catch (error) {
+        console.warn('Token refresh failed, falling back to wallet re-auth:', error);
+      }
+    }
+
+    // Fallback: full SIWE re-auth (wallet signature prompt).
+    // Uses siweLogin (single-flight) so the wallet-connect flow and this
+    // fallback share ONE nonce+signature+verify instead of racing each other.
     try {
       // Dynamic imports to avoid circular deps
-      const { signInWithEthereum } = await import('../wallet');
+      const { siweLogin } = await import('../wallet');
       
       const address = this.getStoredAddress();
       
@@ -123,12 +149,8 @@ export class ApiClient {
 
       // Ensure address is valid hex format for viem
       const walletAddress = address.startsWith('0x') ? address as `0x${string}` : `0x${address}` as `0x${string}`;
-      const { signature } = await signInWithEthereum(walletAddress);
-      const verifyResponse = await authApi.verify({ address: walletAddress, signature, nonce: '' });
-      const accessToken = verifyResponse?.data?.accessToken;
-      
-      this.setToken(accessToken);
-      return accessToken;
+      const result = await siweLogin(walletAddress);
+      return result?.accessToken ?? null;
     } catch (error) {
       console.error('Silent re-auth failed:', error);
       return null;
@@ -139,6 +161,13 @@ export class ApiClient {
     // Try to get from localStorage (set when wallet connects)
     if (typeof window !== 'undefined') {
       return localStorage.getItem('walletAddress');
+    }
+    return null;
+  }
+
+  private getStoredRefreshToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('refreshToken');
     }
     return null;
   }

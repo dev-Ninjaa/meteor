@@ -1,20 +1,21 @@
 import { api } from './index';
 import type { Notification, QueryNotificationsDto } from '../../types/notification';
-import type { PaginatedResponse } from '../../types';
+import type { ApiResponse, PaginatedResponse } from '../../types';
 
+// Backend returns wrapped responses: {statusCode, message, data: T, ...}
 export const notificationsApi = {
   list: (params?: QueryNotificationsDto) =>
-    api.get<PaginatedResponse<Notification>>('/notifications', params),
+    api.get<ApiResponse<PaginatedResponse<Notification>>>('/notifications', params),
 
   getUnreadCount: () =>
-    api.get<number>('/notifications/unread-count'),
+    api.get<ApiResponse<{ count: number }>>('/notifications/unread-count'),
 
   markRead: (id: string) =>
-    api.patch(`/notifications/${id}/read`),
+    api.patch<ApiResponse<Notification>>(`/notifications/${id}/read`),
 
   markAllRead: () =>
-    api.patch('/notifications/read-all'),
+    api.patch<ApiResponse<{ count: number }>>('/notifications/read-all'),
 
   delete: (id: string) =>
-    api.delete(`/notifications/${id}`),
+    api.delete<ApiResponse<void>>(`/notifications/${id}`),
 };
