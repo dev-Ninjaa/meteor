@@ -11,10 +11,10 @@ RUN bunx prisma@6.19.3 generate
 EXPOSE 4000
 CMD ["sh", "-c", "bunx prisma migrate deploy && bun run start:dev"]
 
-# Production build: enforce exact lockfile versions
+# Production build
 FROM base AS build
 COPY meteor-backend/ .
-RUN bun install --frozen-lockfile
+RUN bun install
 RUN bunx prisma@6.19.3 generate
 RUN bun run build
 
