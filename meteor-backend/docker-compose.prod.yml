@@ -1,13 +1,13 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: meteor-postgres
+    container_name: meteor-postgres-prod
     restart: unless-stopped
     ports:
       - '5432:5432'
     environment:
       POSTGRES_USER: meteor
-      POSTGRES_PASSWORD: meteor123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: meteor_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -19,7 +19,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: meteor-redis
+    container_name: meteor-redis-prod
     restart: unless-stopped
     ports:
       - '6379:6379'
@@ -34,17 +34,17 @@ services:
   app:
     build:
       context: .
-      target: development
-    container_name: meteor-app
+      target: production
+    container_name: meteor-app-prod
     restart: unless-stopped
     ports:
       - '4000:4000'
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       PORT: 4000
       API_PREFIX: api
       API_VERSION: 1
-      DATABASE_URL: postgresql://meteor:meteor123@postgres:5432/meteor_db
+      DATABASE_URL: postgresql://meteor:${POSTGRES_PASSWORD}@postgres:5432/meteor_db
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET}
@@ -60,9 +60,6 @@ services:
       PINATA_JWT: ${PINATA_JWT}
       CORS_ORIGIN: ${CORS_ORIGIN}
       LOG_LEVEL: ${LOG_LEVEL}
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
     healthcheck:
       test: ['CMD', 'node', '-e', '(async()=>{try{const r=await fetch("http://localhost:4000/health/live");process.exit(r.ok?0:1)}catch{process.exit(1)}})()']
       interval: 30s

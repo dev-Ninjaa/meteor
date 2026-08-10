@@ -233,20 +233,20 @@ async function testTaskCreationAndEscrowLock(): Promise<TaskFlow | null> {
   console.log('   Testing task creation via API...');
   let backendTaskId: string | null = null;
   try {
-      const createRes = await httpRequest('/tasks', {
-        method: 'POST',
-        body: {
-          title: 'Test Website Review',
-          description: 'Review our landing page and find bugs',
-          reward: '0.001',
-          tags: ['testing', 'website'],
-          workersRequired: 3,
-          maxWorkers: 5,
-          verificationMode: 'MANUAL',
-          allowAiVerification: false,
-          manualVerificationRequired: true,
-        },
-      });
+    const createRes = await httpRequest('/tasks', {
+      method: 'POST',
+      body: {
+        title: 'Test Website Review',
+        description: 'Review our landing page and find bugs',
+        reward: '0.001',
+        tags: ['testing', 'website'],
+        workersRequired: 3,
+        maxWorkers: 5,
+        verificationMode: 'MANUAL',
+        allowAiVerification: false,
+        manualVerificationRequired: true,
+      },
+    });
     backendTaskId = unwrapResponse<{ id: string }>(createRes.data).id;
     console.log(`   ✅ Task created via API: ${backendTaskId}`);
   } catch (e: unknown) {

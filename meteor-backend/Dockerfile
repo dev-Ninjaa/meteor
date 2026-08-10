@@ -1,22 +1,23 @@
-FROM node:24-alpine AS base
+FROM oven/bun:1.3.5-alpine AS base
 WORKDIR /usr/src/app
-COPY package.json package-lock.json ./
+COPY package.json bun.lock ./
 
-FROM base AS deps
-RUN npm ci
-
-FROM deps AS development
+# Development: allow lockfile updates for velocity
+FROM base AS development
+RUN bun install
 COPY . .
-RUN npx prisma@6.19.3 generate
+RUN bunx prisma@6.19.3 generate
 EXPOSE 4000
-CMD ["npm", "run", "start:dev"]
+CMD ["sh", "-c", "bunx prisma migrate deploy && bun run start:dev"]
 
-FROM deps AS build
+# Production build: enforce exact lockfile versions
+FROM base AS build
+RUN bun install --frozen-lockfile
 COPY . .
-RUN npx prisma@6.19.3 generate
-RUN npm run build
+RUN bunx prisma@6.19.3 generate
+RUN bun run build
 
-FROM node:24-alpine AS production
+FROM oven/bun:1.3.5-alpine AS production
 WORKDIR /usr/src/app
 COPY --from=build /usr/src/app/dist ./dist
 COPY --from=build /usr/src/app/node_modules ./node_modules
@@ -24,4 +25,4 @@ COPY --from=build /usr/src/app/package.json ./
 COPY --from=build /usr/src/app/prisma ./prisma
 ENV NODE_ENV=production
 EXPOSE 4000
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "bunx prisma migrate deploy && bun run dist/main"]
