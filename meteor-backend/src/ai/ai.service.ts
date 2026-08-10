@@ -92,6 +92,7 @@ export class AiService {
     taskRequirements: string;
     submissionContent: string;
     submissionProof?: string;
+    submissionType?: string;
   }): Promise<AiVerificationResult> {
     const prompt = buildVerificationPrompt(params);
 

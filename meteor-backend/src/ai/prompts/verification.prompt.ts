@@ -22,12 +22,14 @@ export function buildVerificationPrompt(params: {
   taskRequirements: string;
   submissionContent: string;
   submissionProof?: string;
+  submissionType?: string;
 }): string {
   let prompt = `Verify the following submission:
 
 Task: ${params.taskTitle}
 Description: ${params.taskDescription}
 Requirements: ${params.taskRequirements}
+Submission Type: ${params.submissionType || 'text'}
 
 Submission Content: ${params.submissionContent}`;
 
