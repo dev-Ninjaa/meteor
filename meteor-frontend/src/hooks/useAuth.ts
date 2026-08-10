@@ -21,8 +21,8 @@ export function useAuth() {
       const accessToken = authData?.accessToken;
       const refreshToken = authData?.refreshToken;
       
-      queryClient.setQueryData(['user', 'me'], user);
-      // Store token for socket connection
+      // Store token FIRST so components gating on getToken() see it on the next render,
+      // then populate the user cache (which triggers the reactive re-render).
       if (typeof window !== 'undefined') {
         console.log('[useAuth] Storing tokens:', { accessToken: accessToken?.slice(0, 20) + '...', refreshToken: refreshToken?.slice(0, 20) + '...' });
         localStorage.setItem('accessToken', accessToken);
@@ -31,18 +31,19 @@ export function useAuth() {
         api.setToken(accessToken);
         console.log('[useAuth] Token set on api client, localStorage:', localStorage.getItem('accessToken')?.slice(0, 20) + '...');
       }
+      queryClient.setQueryData(['user', 'me'], user);
     },
   });
 
   const logout = useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
-      queryClient.clear();
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         api.setToken(null);
       }
+      queryClient.clear();
     },
   });
 
@@ -66,7 +67,7 @@ export function useAuth() {
   return { login, logout, getToken, initializeAuth };
 }
 
-export function useMe() {
+export function useMe(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['user', 'me'],
     queryFn: async () => {
@@ -74,6 +75,7 @@ export function useMe() {
       // Backend returns wrapped response: {statusCode, message, data: User}
       return response.data;
     },
+    enabled: options?.enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

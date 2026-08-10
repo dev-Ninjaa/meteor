@@ -2,12 +2,12 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useAccount } from 'wagmi';
 import { useAuth } from './useAuth';
-import { signInWithEthereum } from '../lib/wallet';
+import { siweLogin } from '../lib/wallet';
 import { api } from '../lib/api';
 
 export function useWalletAuth() {
   const { address, isConnected, isConnecting } = useAccount();
-  const { login, initializeAuth, getToken } = useAuth();
+  const { initializeAuth, getToken } = useAuth();
   const authAttempted = useRef(false);
   const lastAuthAddress = useRef<string | null>(null);
 
@@ -28,16 +28,13 @@ export function useWalletAuth() {
         return;
       }
 
-      // Perform SIWE authentication
-      console.log('[useWalletAuth] Calling signInWithEthereum...');
-      const { signature } = await signInWithEthereum(address as `0x${string}`);
-      console.log('[useWalletAuth] Got signature, calling login mutation...');
-      
-      // Backend expects walletAddress and signature (nonce is stored in DB)
-      await login.mutateAsync({
-        walletAddress: address,
-        signature,
-      });
+      // Perform SIWE authentication via the single-flight login shared with
+      // ApiClient's silent re-auth, so they never race each other's nonce.
+      console.log('[useWalletAuth] Calling siweLogin...');
+      const result = await siweLogin(address as `0x${string}`);
+      if (!result) {
+        throw new Error('SIWE login returned no token');
+      }
       
       lastAuthAddress.current = address;
       console.log('[useWalletAuth] SIWE auth successful!');
@@ -45,7 +42,7 @@ export function useWalletAuth() {
       console.error('[useWalletAuth] SIWE auth failed:', error);
       authAttempted.current = false; // Allow retry on error
     }
-  }, [address, login, getToken]);
+  }, [address, getToken]);
 
   // Initialize API client token on mount
   useEffect(() => {

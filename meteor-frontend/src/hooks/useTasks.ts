@@ -2,15 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi, marketplaceApi } from '../lib/api';
 import type { CreateTaskDto, UpdateTaskDto, QueryTasksDto, Task, TaskItem, PaginatedResponse, TaskCategory, VerificationMode, EscrowStatus } from '../types';
-
-const VALID_CATEGORIES: TaskCategory[] = [
-  'AI Verification',
-  'Code Debugging',
-  'Design Feedback',
-  'Translation',
-  'Local Knowledge',
-  'Data Labeling',
-];
+import { VALID_CATEGORIES } from '../constants/tasks';
 
 // Helper to transform backend Task to frontend TaskItem
 const transformTask = (task: Task): TaskItem => {
@@ -34,7 +26,7 @@ const transformTask = (task: Task): TaskItem => {
     difficulty: 'Medium',
     creator: task.createdById,
     status: task.status,
-    submissionType: 'text',
+    submissionType: (task.submissionType as TaskItem['submissionType']) || 'text',
     verificationType: task.verificationMode === 'AI' ? 'AI Verification' : task.verificationMode === 'MANUAL' ? 'Human Review' : 'Hybrid',
     verificationMode: task.verificationMode,
     escrowStatus: task.escrowStatus,
@@ -43,9 +35,10 @@ const transformTask = (task: Task): TaskItem => {
     aiPrompt: task.aiPrompt,
     tags: task.tags,
     createdById: task.createdById,
-    options: [],
+    options: task.submissionOptions || [],
     createdAt: task.createdAt,
-    userSubmission: undefined,
+    mySubmission: task.mySubmission ?? undefined,
+    userSubmission: task.mySubmission?.content,
     aiSummary: undefined,
   };
 };

@@ -1,7 +1,12 @@
 // Payments hooks
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { paymentsApi } from '../lib/api';
-import type { CreateEscrowDto, ReleaseEscrowDto, RefundEscrowDto, QueryTransactionsDto, Transaction, PaginatedResponse } from '../types';
+import { useMe } from './useAuth';
+import type { CreateEscrowDto, ReleaseEscrowDto, RefundEscrowDto, ClaimEscrowDto, QueryTransactionsDto, Transaction, PaginatedResponse } from '../types';
+
+// Backend amount is a plain Decimal string (no sign) — direction must come from tx.type
+export const INCOMING_TX_TYPES = ['CLAIM_PAYMENT', 'ESCROW_RELEASE', 'ESCROW_REFUND'];
+export const OUTGOING_TX_TYPES = ['ESCROW_CREATE'];
 
 export function useTransactions(params?: QueryTransactionsDto) {
   return useQuery({
@@ -71,28 +76,47 @@ export function useRefundEscrow() {
   });
 }
 
+export function useClaimEscrow() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: ClaimEscrowDto) => {
+      const response = await paymentsApi.claimEscrow(data);
+      // Backend returns wrapped response: {statusCode, message, data: Transaction}
+      return response.data;
+    },
+    onSuccess: (data: Transaction) => {
+      qc.invalidateQueries({ queryKey: ['transactions'] });
+      qc.invalidateQueries({ queryKey: ['task', data.taskId] });
+    },
+  });
+}
+
 // Aggregated hook for WalletView
 export function usePayments() {
-  const { data: transactionsResponse, isLoading } = useTransactions();
+  const { data: me } = useMe();
+  const { data: transactionsResponse, isLoading } = useTransactions({
+    userId: me?.id,
+  });
   const transactions = transactionsResponse?.data || [];
-  
+
   const totalEarnings = transactions
-    .filter((t: Transaction) => t.amount.startsWith('+'))
-    .reduce((acc: number, t: Transaction) => acc + parseFloat(t.amount.replace('+', '').replace(' MON', '')), 0)
+    .filter((t: Transaction) => INCOMING_TX_TYPES.includes(t.type))
+    .reduce((acc: number, t: Transaction) => acc + parseFloat(t.amount), 0)
     .toFixed(1);
 
   const totalSpending = transactions
-    .filter((t: Transaction) => t.amount.startsWith('-'))
-    .reduce((acc: number, t: Transaction) => acc + Math.abs(parseFloat(t.amount.replace('-', '').replace(' MON', ''))), 0)
+    .filter((t: Transaction) => OUTGOING_TX_TYPES.includes(t.type))
+    .reduce((acc: number, t: Transaction) => acc + parseFloat(t.amount), 0)
     .toFixed(1);
 
   const pendingRewards = transactions
-    .filter((t: Transaction) => t.status === 'PENDING' && t.amount.startsWith('+'))
-    .reduce((acc: number, t: Transaction) => acc + parseFloat(t.amount.replace('+', '').replace(' MON', '')), 0);
+    .filter((t: Transaction) => t.status === 'PENDING' && INCOMING_TX_TYPES.includes(t.type))
+    .reduce((acc: number, t: Transaction) => acc + parseFloat(t.amount), 0);
 
   const createEscrow = useCreateEscrow();
   const releaseEscrow = useReleaseEscrow();
   const refundEscrow = useRefundEscrow();
+  const claimPayment = useClaimEscrow();
 
   return {
     transactions,
@@ -103,6 +127,6 @@ export function usePayments() {
     createEscrow,
     releaseEscrow,
     refundEscrow,
-    claimPayment: null, // Would be wagmi hook
+    claimPayment,
   };
 }

@@ -10,11 +10,11 @@ export function useDashboardAnalytics() {
   const { data: submittedData } = useDashboardSubmitted();
   const { data: joinedData } = useDashboardJoined();
 
-  // Fetch transactions for earnings/spending
+  // Fetch transactions for earnings/spending - backend scopes to the JWT user
   const { data: transactionsResponse } = useQuery({
-    queryKey: ['dashboard-transactions', address],
+    queryKey: ['dashboard-transactions'],
     queryFn: async () => {
-      const response = await paymentsApi.list({ userId: address });
+      const response = await paymentsApi.list({});
       return response.data.data;
     },
     enabled: !!address,

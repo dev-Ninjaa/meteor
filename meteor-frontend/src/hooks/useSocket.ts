@@ -1,10 +1,22 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { socket } from '../lib/socket';
 import { useAuth } from './useAuth';
 
 export function useSocket() {
   const { getToken } = useAuth();
   const initialized = useRef(false);
+  const [connected, setConnected] = useState(socket.connected);
+
+  useEffect(() => {
+    const onConnect = () => setConnected(true);
+    const onDisconnect = () => setConnected(false);
+    socket.on('connected', onConnect);
+    socket.on('disconnected', onDisconnect);
+    return () => {
+      socket.off('connected', onConnect);
+      socket.off('disconnected', onDisconnect);
+    };
+  }, []);
 
   useEffect(() => {
     const token = getToken();
@@ -22,7 +34,13 @@ export function useSocket() {
     };
   }, [getToken]);
 
-  return socket;
+  return useMemo(
+    () => ({
+      ...socket,
+      connected,
+    }),
+    [connected],
+  );
 }
 
 // Helper hooks for specific events
@@ -43,9 +61,8 @@ export function useTaskEvents(taskId: string | null) {
   };
 }
 
-export function useNotificationEvents() {
+export function useNotificationEvents(userId: string | null) {
   const { subscribeToUser, unsubscribeFromUser, on, off, connected } = useSocket();
-  const userId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
 
   useEffect(() => {
     if (!userId || !connected) return;
