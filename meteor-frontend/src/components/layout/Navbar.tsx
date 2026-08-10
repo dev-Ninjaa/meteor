@@ -1,7 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { GithubIcon } from '../shared/GithubIcon'
-import { Globe, ArrowUpRight, LayoutDashboard, Store, Wallet, ArrowLeft, User } from 'lucide-react'
-import { WalletConnectButton } from '../ui/WalletConnectButton'
+import { Globe, ArrowUpRight, LayoutDashboard, Store, Wallet, ArrowLeft, User, Bell } from 'lucide-react'
+import { WalletConnectButton } from '../../features/auth/WalletConnectButton'
+import { NotificationCenter } from '../../features/notifications/NotificationCenter'
+import { useUnreadCount } from '../../hooks/useNotifications'
+import { useAuth, useMe } from '../../hooks/useAuth'
 import { useAccount } from 'wagmi'
 import { useLocation, Link } from 'react-router-dom'
 
@@ -10,6 +13,11 @@ export const Navbar: React.FC = () => {
   const { address, isConnected } = useAccount()
   const isAppRoute = location.pathname.startsWith('/app')
   const isLanding = location.pathname === '/'
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const { getToken } = useAuth()
+  // Subscribe to ['user','me'] so login/logout re-renders this component and re-evaluates the gate below
+  const { data: currentUser } = useMe()
+  const { data: unreadCount } = useUnreadCount({ enabled: isAppRoute && (!!currentUser || !!getToken()) })
 
   const navItems = [
     { path: '/app/marketplace', label: 'Marketplace', icon: Store },
@@ -87,6 +95,22 @@ export const Navbar: React.FC = () => {
             <GithubIcon className="w-4 h-4" />
           </a>
 
+          {/* Notifications bell - only on /app routes */}
+          {isAppRoute && (
+            <button
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className="relative w-9 h-9 rounded-full liquid-glass flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              {(unreadCount ?? 0) > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[#836EF9] text-white text-[9px] font-semibold flex items-center justify-center">
+                  {(unreadCount ?? 0) > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Wallet Connect Button - only on /app routes */}
           {isAppRoute && <WalletConnectButton />}
 
@@ -102,6 +126,7 @@ export const Navbar: React.FC = () => {
           )}
         </div>
       </nav>
+      {isAppRoute && <NotificationCenter isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />}
     </header>
   )
 };

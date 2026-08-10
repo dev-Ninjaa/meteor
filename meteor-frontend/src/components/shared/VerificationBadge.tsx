@@ -1,6 +1,6 @@
 import React from 'react';
 import { VerificationType } from '../../types';
-import { Bot, UserCheck, Sparkles, Users, User, GitMerge } from 'lucide-react';
+import { Bot, UserCheck, Sparkles, Users, GitMerge } from 'lucide-react';
 
 interface VerificationBadgeProps {
   type: VerificationType;
@@ -16,12 +16,6 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ type, clas
           bg: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
           label: 'AI Verification',
         };
-      case 'Human Review':
-        return {
-          icon: UserCheck,
-          bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-          label: 'Human Review',
-        };
       case 'AI First':
         return {
           icon: Sparkles,
@@ -36,8 +30,8 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ type, clas
         };
       case 'Creator Review':
         return {
-          icon: User,
-          bg: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
+          icon: UserCheck,
+          bg: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
           label: 'Creator Review',
         };
       case 'Hybrid':

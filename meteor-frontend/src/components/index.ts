@@ -14,14 +14,10 @@ export { OpenSourceSection } from './landing/OpenSourceSection';
 
 // Layout Components
 export { Navbar } from './layout/Navbar'
-export { Toasts } from './layout/Toasts'
 
 // UI Components
-export { WalletConnectButton } from './ui/WalletConnectButton'
-
-// Marketplace Components
-export { CreateTaskModal } from './marketplace/CreateTaskModal';
-export { InteractiveSolverModal } from './marketplace/InteractiveSolverModal';
+export { Modal } from './ui/Modal'
+export { Toaster, useToast } from './ui/toaster'
 
 // Shared Components
 export { AiSummaryCard } from './shared/AiSummaryCard';
