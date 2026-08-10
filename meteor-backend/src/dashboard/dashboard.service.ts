@@ -109,7 +109,7 @@ export class DashboardService {
     ]);
 
     return {
-      data: data.map(task => this.mapDashboardTask(task, 'creator', userId)),
+      data: data.map((task) => this.mapDashboardTask(task, 'creator', userId)),
       total,
       page: query.page || 1,
       limit,
@@ -141,7 +141,7 @@ export class DashboardService {
     ]);
 
     return {
-      data: submissions.map(sub => this.mapDashboardTask(sub.task, 'worker', userId, sub)),
+      data: submissions.map((sub) => this.mapDashboardTask(sub.task, 'worker', userId, sub)),
       total,
       page: query.page || 1,
       limit,
@@ -184,7 +184,9 @@ export class DashboardService {
     ]);
 
     return {
-      data: taskWorkers.map(tw => this.mapDashboardTask(tw.task, 'joined', userId, tw.task.submissions[0])),
+      data: taskWorkers.map((tw) =>
+        this.mapDashboardTask(tw.task, 'joined', userId, tw.task.submissions[0]),
+      ),
       total,
       page: query.page || 1,
       limit,
@@ -219,16 +221,20 @@ export class DashboardService {
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
       myRole: role,
-      mySubmission: submission ? {
-        id: submission.id,
-        status: submission.status,
-        content: submission.content,
-        createdAt: submission.createdAt,
-        verification: submission.verification ? {
-          status: submission.verification.status,
-          score: submission.verification.score,
-        } : undefined,
-      } : undefined,
+      mySubmission: submission
+        ? {
+            id: submission.id,
+            status: submission.status,
+            content: submission.content,
+            createdAt: submission.createdAt,
+            verification: submission.verification
+              ? {
+                  status: submission.verification.status,
+                  score: submission.verification.score,
+                }
+              : undefined,
+          }
+        : undefined,
     };
   }
 }

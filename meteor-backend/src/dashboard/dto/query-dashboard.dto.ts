@@ -14,7 +14,10 @@ export class QueryDashboardDto {
   @Min(1)
   limit?: number;
 
-  @ApiPropertyOptional({ description: 'Tab to show: created | submitted | joined', example: 'created' })
+  @ApiPropertyOptional({
+    description: 'Tab to show: created | submitted | joined',
+    example: 'created',
+  })
   @IsString()
   @IsOptional()
   @IsEnum(['created', 'submitted', 'joined'])
