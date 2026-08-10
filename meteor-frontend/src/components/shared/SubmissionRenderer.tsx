@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { SubmissionType } from '../../types';
+import { storageApi } from '../../lib/api';
 import {
   Type,
   CheckSquare,
   Star,
-  Image as ImageIcon,
-  Video,
-  Mic,
   FileText,
-  Link as LinkIcon,
+  LinkIcon,
   ListChecks,
-  Sliders,
-  MapPin,
-  Camera,
-  Upload
+  Upload,
+  Image,
+  Video,
+  Music,
+  File,
+  Loader2,
 } from 'lucide-react';
 
 interface SubmissionRendererProps {
@@ -23,6 +23,26 @@ interface SubmissionRendererProps {
   value: any;
 }
 
+const getFileIcon = (type: string) => {
+  switch (type) {
+    case 'image': return <Image className="w-4 h-4" />;
+    case 'video': return <Video className="w-4 h-4" />;
+    case 'audio': return <Music className="w-4 h-4" />;
+    case 'document': return <File className="w-4 h-4" />;
+    default: return <FileText className="w-4 h-4" />;
+  }
+};
+
+const getFileTypes = (type: string): string => {
+  switch (type) {
+    case 'image': return 'image/*';
+    case 'video': return 'video/*';
+    case 'audio': return 'audio/*';
+    case 'document': return '.pdf,.doc,.docx,.txt,.md,.json';
+    default: return '*/*';
+  }
+};
+
 export const SubmissionRenderer: React.FC<SubmissionRendererProps> = ({
   type,
   options = [],
@@ -30,8 +50,211 @@ export const SubmissionRenderer: React.FC<SubmissionRendererProps> = ({
   value,
 }) => {
   const [dragActive, setDragActive] = useState(false);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  switch (type) {
+  const handleDrag = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      handleFileSelect(file);
+    }
+  }, []);
+
+  const handleFileSelect = async (file: File) => {
+    // Create a blob URL for preview (for images/videos/audio)
+    const previewUrl = URL.createObjectURL(file);
+    setFilePreview(previewUrl);
+    setFileName(file.name);
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => Math.min(prev + 10, 90));
+      }, 100);
+
+      // Upload to storage backend
+      const response = await storageApi.upload(file);
+            clearInterval(progressInterval);
+            setUploadProgress(100);
+
+            const uploadData = response.data; // response.data is already the { url, cid, ... } object
+
+            // Store the uploaded file info with IPFS URL
+            onChange({
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              preview: previewUrl,
+              url: uploadData.url,
+              cid: uploadData.cid,
+            });
+
+      setTimeout(() => setIsUploading(false), 500);
+    } catch (error) {
+      console.error('Upload failed:', error);
+      // Fallback to local preview only
+      onChange({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        preview: previewUrl,
+        error: 'Upload failed - using local preview only',
+      });
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileSelect(e.target.files[0]);
+    }
+  };
+
+  const removeFile = () => {
+    if (filePreview) URL.revokeObjectURL(filePreview);
+    setFilePreview(null);
+    setFileName(null);
+    setIsUploading(false);
+    setUploadProgress(0);
+    onChange(null);
+  };
+
+  const isMediaUpload = ['image', 'video', 'audio', 'document', 'file'].includes(type);
+
+  if (isMediaUpload) {
+    const acceptTypes = getFileTypes(type);
+    const labelText = type === 'file' ? 'Upload File' : `Upload ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    const icon = getFileIcon(type);
+
+    return (
+      <div className="space-y-2">
+        <label className="text-xs font-mono text-white/70 block">
+          {labelText} (Drag & Drop or Click)
+        </label>
+        <div
+          className={`rounded-2xl p-5 border transition-all flex flex-col items-center gap-3 ${
+            dragActive
+              ? 'border-[#836EF9] bg-[#836EF9]/10'
+              : 'liquid-glass border-white/10'
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            {icon}
+            <span className="text-[10px] font-mono text-white/40">
+              {isUploading ? `Uploading... ${uploadProgress}%` : fileName
+                ? `Selected: ${fileName}`
+                : 'Drag & drop a file or click to browse'}
+            </span>
+          </div>
+
+          {isUploading && (
+            <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-[#836EF9] rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          )}
+
+          {!fileName && !isUploading && (
+                      <>
+                        <input
+                          type="file"
+                          accept={acceptTypes}
+                          onChange={handleFileInputChange}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          id={`file-upload-${type}`}
+                        />
+                        <label
+                          htmlFor={`file-upload-${type}`}
+                          className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:bg-white/10 text-xs font-mono cursor-pointer"
+                        >
+                          Choose File
+                        </label>
+                      </>
+                    )}
+
+          {filePreview && (
+            <div className="w-full max-w-xs relative">
+              {type === 'image' && (
+                <img
+                  src={filePreview}
+                  alt="Preview"
+                  className="rounded-xl max-h-48 object-contain"
+                />
+              )}
+              {type === 'video' && (
+                <video
+                  src={filePreview}
+                  controls
+                  className="rounded-xl max-h-48"
+                />
+              )}
+              {type === 'audio' && (
+                <audio
+                  src={filePreview}
+                  controls
+                  className="w-full"
+                />
+              )}
+              {(type === 'document' || type === 'file') && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-black/30 border border-white/10">
+                  {getFileIcon(type)}
+                  <span className="text-xs text-white/80 truncate">{fileName}</span>
+                  {value?.cid && (
+                    <span className="text-[10px] font-mono text-emerald-400">IPFS: {value.cid.slice(0, 12)}...</span>
+                  )}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={removeFile}
+                disabled={isUploading}
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500/80 text-white text-xs flex items-center justify-center hover:bg-red-500 transition-colors disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          {value?.url && !isUploading && (
+            <p className="text-[10px] font-mono text-emerald-400 text-center">
+              ✓ Uploaded to IPFS: <a href={value.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-emerald-300">{value.cid?.slice(0, 16)}...</a>
+            </p>
+          )}
+
+          {!value?.url && fileName && !isUploading && (
+            <p className="text-[10px] font-mono text-amber-400 text-center">
+              ⚠ Local preview only. Configure Pinata for permanent IPFS storage.
+            </p>
+          )}
+        </div>
+              </div>
+            );
+          }
+
+          switch (type) {
     case 'multiple_choice':
       return (
         <div className="space-y-2">
@@ -91,109 +314,15 @@ export const SubmissionRenderer: React.FC<SubmissionRendererProps> = ({
         </div>
       );
 
-    case 'gps':
-      return (
-        <div className="space-y-3">
-          <label className="text-xs font-mono text-white/70 block">Location Tag & Storefront Verification</label>
-          <div className="liquid-glass rounded-2xl p-4 border border-white/10 space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-                <MapPin className="w-5 h-5 animate-bounce" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-white">GPS Coordinate Tagged</div>
-                <div className="text-[11px] font-mono text-white/50">Lat: 35.6620° N, Lon: 139.6980° E (Accuracy: ± 2m)</div>
-              </div>
-            </div>
-
-            <div className="border-t border-white/10 pt-3">
-              <label className="text-[11px] font-mono text-white/60 mb-1.5 block">Upload On-Site Photo</label>
-              <div className="border-2 border-dashed border-white/15 rounded-xl p-4 text-center hover:border-white/30 transition-colors">
-                <Camera className="w-6 h-6 text-white/40 mx-auto mb-2" />
-                <span className="text-xs text-white/70 font-mono block">Click to capture or upload photo</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => onChange(e.target.files?.[0]?.name || 'geotagged_photo.jpg')}
-                  className="hidden"
-                  id="gps-photo-upload"
-                />
-                <label
-                  htmlFor="gps-photo-upload"
-                  className="inline-block mt-2 px-3 py-1 bg-white/10 rounded-lg text-[10px] font-mono text-white cursor-pointer hover:bg-white/20"
-                >
-                  Select File
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
-
-    case 'image':
-    case 'file':
-      return (
-        <div className="space-y-2">
-          <label className="text-xs font-mono text-white/70 block">
-            {type === 'image' ? 'Upload Proof Screenshot / Image' : 'Upload Verification Document / File'}
-          </label>
-          <div className="border-2 border-dashed border-white/15 rounded-2xl p-6 text-center hover:border-[#836EF9]/50 transition-colors liquid-glass">
-            <Upload className="w-8 h-8 text-[#836EF9] mx-auto mb-2" />
-            <div className="text-xs text-white font-medium mb-1">Drag and drop file here or click to browse</div>
-            <div className="text-[10px] font-mono text-white/40">PNG, JPG, PDF, SVG up to 25MB</div>
-            <input
-              type="file"
-              onChange={(e) => onChange(e.target.files?.[0]?.name || 'proof_file.pdf')}
-              className="hidden"
-              id="file-upload-input"
-            />
-            <label
-              htmlFor="file-upload-input"
-              className="inline-block mt-3 px-4 py-1.5 bg-white text-black font-semibold text-xs rounded-full cursor-pointer hover:bg-white/90 shadow-md"
-            >
-              Browse File
-            </label>
-            {value && <div className="mt-2 text-xs font-mono text-emerald-400">Selected: {value}</div>}
-          </div>
-        </div>
-      );
-
-    case 'screen_recording':
-    case 'video':
-      return (
-        <div className="space-y-2">
-          <label className="text-xs font-mono text-white/70 block">Screen Recording / Video Upload</label>
-          <div className="liquid-glass rounded-2xl p-5 border border-white/10 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-                <Video className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-white">Record Web Session</div>
-                <div className="text-[11px] font-mono text-white/50">Capture screen audio & user interactions</div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => onChange('screen_recording_session.mp4')}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-mono font-semibold transition-colors flex items-center gap-1.5"
-            >
-              <span>{value ? 'Recorded' : 'Start Record'}</span>
-            </button>
-          </div>
-        </div>
-      );
-
     case 'checklist':
       return (
         <div className="space-y-2">
           <label className="text-xs font-mono text-white/70 block">Verification Checklist</label>
           <div className="space-y-2">
-            {[
-              'Reviewed Section 4.2 Liability Clause',
-              'Confirmed California Civil Code § 1668 Compliance',
-              'Verified No Ambiguous Waivers Present',
-            ].map((check, i) => (
+            {(options.length > 0
+              ? options
+              : ['Reviewed Section 4.2 Liability Clause', 'Confirmed California Civil Code § 1668 Compliance', 'Verified No Ambiguous Waivers Present']
+            ).map((check, i) => (
               <label
                 key={i}
                 className="liquid-glass rounded-xl p-3 border border-white/10 flex items-center gap-3 text-xs text-white/80 cursor-pointer hover:bg-white/5"
