@@ -8,7 +8,9 @@ export type Submission = {
   id: string;
   content: string;
   proof: string | null;
+  submissionType?: string | null;
   status: SubmissionStatus;
+  claimed: boolean;
   aiScore: number | null;
   aiFeedback: string | null;
   taskId: string;
@@ -31,6 +33,7 @@ export type Verification = {
 export type CreateSubmissionDto = {
   content: string;
   proof?: string;
+  submissionType?: string;
 };
 
 export type ManualVerifyDto = {

@@ -39,6 +39,11 @@ export type RefundEscrowDto = {
   reason?: string;
 };
 
+export type ClaimEscrowDto = {
+  taskId: string;
+  txHash: string;
+};
+
 export type QueryTransactionsDto = QueryParams & {
   status?: TransactionStatus;
   type?: string;

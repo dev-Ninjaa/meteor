@@ -49,6 +49,7 @@ export type {
   CreateEscrowDto,
   ReleaseEscrowDto,
   RefundEscrowDto,
+  ClaimEscrowDto,
   QueryTransactionsDto,
   TransactionListResponse,
 } from './payment';

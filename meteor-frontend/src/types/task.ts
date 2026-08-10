@@ -11,6 +11,32 @@ export type EscrowStatus = 'UNLOCKED' | 'LOCKED' | 'RELEASED' | 'REFUNDED';
 // Re-export shared enums from common (so they're available from task.ts)
 export type { TaskCategory, Difficulty, TransactionType, TransactionStatus } from './common';
 
+export type TaskSubmissionVerification = {
+  id: string;
+  status: string;
+  aiScore: number | null;
+  aiFeedback: string | null;
+  manualNotes: string | null;
+  isManual: boolean;
+  verifiedById: string | null;
+};
+
+export type TaskSubmission = {
+  id: string;
+  content: string;
+  proof: string | null;
+  submissionType: string | null;
+  status: string;
+  claimed: boolean;
+  aiScore: number | null;
+  aiFeedback: string | null;
+  taskId: string;
+  workerId: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  verification: TaskSubmissionVerification | null;
+};
+
 export type Task = {
   id: string;
   title: string;
@@ -26,12 +52,15 @@ export type Task = {
   workersCompleted: number;
   maxWorkers: number;
   verificationMode: VerificationMode;
+  submissionType: string;
+  submissionOptions: string[];
   allowAiVerification: boolean;
   manualVerificationRequired: boolean;
   escrowStatus: EscrowStatus;
   createdById: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  mySubmission?: TaskSubmission | null;
 };
 
 export type CreateTaskDto = {
@@ -43,9 +72,12 @@ export type CreateTaskDto = {
   workersRequired?: number;
   maxWorkers?: number;
   verificationMode?: VerificationMode;
+  submissionType?: string;
+  submissionOptions?: string[];
   allowAiVerification?: boolean;
   manualVerificationRequired?: boolean;
   tokenAddress?: Address;
+  attachments?: any[];
 };
 
 export type UpdateTaskDto = Partial<CreateTaskDto>;
@@ -54,7 +86,7 @@ export type TaskListResponse = PaginatedResponse<Task>;
 
 // Frontend-compatible task type (for UI components)
 export type TaskItem = {
-  mySubmission?: any;
+  mySubmission?: TaskSubmission | null;
   id: string;
   title: string;
   description: string;

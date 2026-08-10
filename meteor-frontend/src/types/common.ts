@@ -14,15 +14,12 @@ export type SubmissionType =
   | 'text'
   | 'multiple_choice'
   | 'rating'
+  | 'file'
   | 'image'
   | 'video'
   | 'audio'
-  | 'file'
-  | 'link'
-  | 'checklist'
-  | 'multi_field'
-  | 'gps'
-  | 'screen_recording';
+  | 'document'
+  | 'checklist';
 
 export type VerificationType =
   | 'AI Verification'
