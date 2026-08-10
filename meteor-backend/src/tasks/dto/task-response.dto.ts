@@ -70,4 +70,7 @@ export class TaskResponseDto {
 
   @ApiPropertyOptional({ type: SubmissionResponseDto })
   mySubmission?: SubmissionResponseDto | null;
+
+  @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
+  attachments?: any[] | null;
 }

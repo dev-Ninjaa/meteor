@@ -44,6 +44,7 @@ export class TasksService {
         manualVerificationRequired: dto.manualVerificationRequired ?? false,
         createdById: userId,
         status: 'DRAFT',
+        attachments: dto.attachments || [],
       },
     });
 
@@ -461,6 +462,7 @@ export class TasksService {
       createdAt: Date;
       updatedAt: Date;
       deletedAt: Date | null;
+      attachments?: Prisma.JsonValue | null;
     },
     submission?: {
       id: string;
@@ -507,6 +509,7 @@ export class TasksService {
       createdById: task.createdById,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
+      attachments: task.attachments ? (Array.isArray(task.attachments) ? task.attachments : []) : [],
       mySubmission: submission
         ? {
             id: submission.id,

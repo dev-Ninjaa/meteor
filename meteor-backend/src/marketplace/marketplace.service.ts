@@ -23,6 +23,7 @@ export interface MarketplaceTaskResponse {
   createdById: string;
   createdAt: Date;
   updatedAt: Date;
+  attachments?: any[];
 }
 
 @Injectable()
@@ -118,6 +119,7 @@ export class MarketplaceService {
             createdById: true,
             createdAt: true,
             updatedAt: true,
+            attachments: true,
           },
         }),
         this.prisma.task.count({ where }),
@@ -188,46 +190,48 @@ export class MarketplaceService {
   }
 
   private mapTaskResponse(task: {
-    id: string;
-    title: string;
-    description: string;
-    reward: Prisma.Decimal;
-    tokenAddress: string | null;
-    status: string;
-    aiGenerated: boolean;
-    tags: string[];
-    workersRequired: number;
-    workersJoined: number;
-    workersCompleted: number;
-    maxWorkers: number;
-    verificationMode: string;
-    allowAiVerification: boolean;
-    manualVerificationRequired: boolean;
-    escrowStatus: string;
-    createdById: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }): MarketplaceTaskResponse {
-    return {
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      reward: task.reward.toString(),
-      tokenAddress: task.tokenAddress,
-      status: task.status,
-      aiGenerated: task.aiGenerated,
-      tags: task.tags,
-      workersRequired: task.workersRequired,
-      workersJoined: task.workersJoined,
-      workersCompleted: task.workersCompleted,
-      maxWorkers: task.maxWorkers,
-      verificationMode: task.verificationMode,
-      allowAiVerification: task.allowAiVerification,
-      manualVerificationRequired: task.manualVerificationRequired,
-      escrowStatus: task.escrowStatus,
-      createdById: task.createdById,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-    };
+      id: string;
+      title: string;
+      description: string;
+      reward: Prisma.Decimal;
+      tokenAddress: string | null;
+      status: string;
+      aiGenerated: boolean;
+      tags: string[];
+      workersRequired: number;
+      workersJoined: number;
+      workersCompleted: number;
+      maxWorkers: number;
+      verificationMode: string;
+      allowAiVerification: boolean;
+      manualVerificationRequired: boolean;
+      escrowStatus: string;
+      createdById: string;
+      createdAt: Date;
+      updatedAt: Date;
+      attachments?: Prisma.JsonValue | null;
+    }): MarketplaceTaskResponse {
+      return {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        reward: task.reward.toString(),
+        tokenAddress: task.tokenAddress,
+        status: task.status,
+        aiGenerated: task.aiGenerated,
+        tags: task.tags,
+        workersRequired: task.workersRequired,
+        workersJoined: task.workersJoined,
+        workersCompleted: task.workersCompleted,
+        maxWorkers: task.maxWorkers,
+        verificationMode: task.verificationMode,
+        allowAiVerification: task.allowAiVerification,
+        manualVerificationRequired: task.manualVerificationRequired,
+        escrowStatus: task.escrowStatus,
+        createdById: task.createdById,
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt,
+        attachments: Array.isArray(task.attachments) ? task.attachments : [],
+      };
+    }
   }
-}
