@@ -1,4 +1,7 @@
-export function isAllowedCorsOrigin(origin: string | undefined, configuredOrigins: string): boolean {
+export function isAllowedCorsOrigin(
+  origin: string | undefined,
+  configuredOrigins: string,
+): boolean {
   if (!origin) {
     return true;
   }
@@ -25,7 +28,10 @@ export function isAllowedCorsOrigin(origin: string | undefined, configuredOrigin
       }
     }
 
-    if (allowedOrigin.startsWith('http://localhost') || allowedOrigin.startsWith('https://localhost')) {
+    if (
+      allowedOrigin.startsWith('http://localhost') ||
+      allowedOrigin.startsWith('https://localhost')
+    ) {
       try {
         const hostname = new URL(normalizedOrigin).hostname.toLowerCase();
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
