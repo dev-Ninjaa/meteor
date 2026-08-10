@@ -1,8 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom';
-import { useAppStore } from './store/useAppStore';
 import { Navbar } from './components/layout/Navbar';
-import { Toasts } from './components/layout/Toasts';
 import { HeroSection } from './components/landing/HeroSection';
 import { CapabilitiesSection } from './components/landing/CapabilitiesSection';
 import { VisionSection } from './components/landing/VisionSection';
@@ -13,13 +11,13 @@ import { OpenSourceSection } from './components/landing/OpenSourceSection';
 
 import { MarketplaceView } from './features/marketplace/MarketplaceView';
 import { DashboardView } from './features/dashboard/DashboardView';
-import { WalletView } from './features/wallet/WalletView';
+import { WalletView } from './features/payments/WalletView';
 import { ProfileView } from './features/profile/ProfileView';
 
-import { CreateTaskModal } from './components/marketplace/CreateTaskModal';
-import { InteractiveSolverModal } from './components/marketplace/InteractiveSolverModal';
-import { TaskDetailModalWrapper } from './components/marketplace/TaskDetailModalWrapper';
-import { ManualVerificationModal } from './components/marketplace/ManualVerificationModal';
+import { CreateTaskModal } from './features/marketplace/CreateTaskModal';
+import { SubmitWorkModal } from './features/tasks/SubmitWorkModal';
+import { TaskDetailModalWrapper } from './features/marketplace/TaskDetailModal';
+import { ManualVerificationModal } from './features/tasks/ManualVerificationModal';
 
 // Landing page component
 const LandingPage: React.FC = () => (
@@ -42,10 +40,9 @@ const AppLayout: React.FC = () => (
       <Outlet />
     </main>
     <CreateTaskModal />
-    <InteractiveSolverModal />
+    <SubmitWorkModal />
     <TaskDetailModalWrapper />
     <ManualVerificationModal />
-    <Toasts />
   </div>
 );
 
@@ -56,7 +53,6 @@ const LandingLayout: React.FC = () => (
     <main className="w-full">
       <Outlet />
     </main>
-    <Toasts />
   </div>
 );
 

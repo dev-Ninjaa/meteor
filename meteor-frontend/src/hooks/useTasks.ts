@@ -7,40 +7,41 @@ import { VALID_CATEGORIES } from '../constants/tasks';
 // Helper to transform backend Task to frontend TaskItem
 const transformTask = (task: Task): TaskItem => {
   const category = task.tags[0] && VALID_CATEGORIES.includes(task.tags[0] as TaskCategory)
-    ? task.tags[0] as TaskCategory
-    : 'AI Verification';
-  
-  return {
-    id: task.id,
-    title: task.title,
-    description: task.description,
-    instructions: '',
-    requirements: '',
-    reward: task.reward,
-    rewardNum: parseFloat(task.reward.replace(' MON', '')) || 0,
-    duration: '10 mins',
-    workersRequired: task.workersRequired,
-    workersJoined: task.workersJoined,
-    workersCompleted: task.workersCompleted,
-    category,
-    difficulty: 'Medium',
-    creator: task.createdById,
-    status: task.status,
-    submissionType: (task.submissionType as TaskItem['submissionType']) || 'text',
-    verificationType: task.verificationMode === 'AI' ? 'AI Verification' : task.verificationMode === 'MANUAL' ? 'Human Review' : 'Hybrid',
-    verificationMode: task.verificationMode,
-    escrowStatus: task.escrowStatus,
-    maxWorkers: task.maxWorkers,
-    aiGenerated: task.aiGenerated,
-    aiPrompt: task.aiPrompt,
-    tags: task.tags,
-    createdById: task.createdById,
-    options: task.submissionOptions || [],
-    createdAt: task.createdAt,
-    mySubmission: task.mySubmission ?? undefined,
-    userSubmission: task.mySubmission?.content,
-    aiSummary: undefined,
-  };
+      ? task.tags[0] as TaskCategory
+      : 'AI Verification';
+ 
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      instructions: '',
+      requirements: '',
+      reward: task.reward,
+      rewardNum: parseFloat(task.reward.replace(' MON', '')) || 0,
+      duration: '10 mins',
+      workersRequired: task.workersRequired,
+      workersJoined: task.workersJoined,
+      workersCompleted: task.workersCompleted,
+      category,
+      difficulty: 'Medium',
+      creator: task.createdById,
+      status: task.status,
+      submissionType: (task.submissionType as TaskItem['submissionType']) || 'text',
+      verificationType: task.verificationMode === 'AI' ? 'AI Verification' : task.verificationMode === 'MANUAL' ? 'Creator Review' : 'Hybrid',
+      verificationMode: task.verificationMode,
+      escrowStatus: task.escrowStatus,
+      maxWorkers: task.maxWorkers,
+      aiGenerated: task.aiGenerated,
+      aiPrompt: task.aiPrompt,
+      tags: task.tags,
+      createdById: task.createdById,
+      options: task.submissionOptions || [],
+      createdAt: task.createdAt,
+      mySubmission: task.mySubmission ?? undefined,
+      userSubmission: task.mySubmission?.content,
+      aiSummary: undefined,
+      attachments: task.attachments || [],
+    };
 };
 
 export function useTasks(params?: QueryTasksDto) {

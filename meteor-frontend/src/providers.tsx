@@ -8,6 +8,7 @@ import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import { wagmiConfig } from './lib/wallet';
 import { Toaster, useToast } from './components/ui/toaster';
 import { useWalletAuth } from './hooks/useWalletAuth';
+import { useSocket } from './hooks/useSocket';
 import { api } from './lib/api';
 import '@rainbow-me/rainbowkit/styles.css';
 
@@ -24,6 +25,12 @@ const queryClient = new QueryClient({
 function AuthInitializer() {
   const { address, isConnected } = useWalletAuth();
   // useWalletAuth handles everything automatically
+  return null;
+}
+
+// Establishes the Socket.IO connection once a JWT token is available
+function SocketConnector() {
+  useSocket();
   return null;
 }
 
@@ -46,6 +53,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
           <AuthInitializer />
+          <SocketConnector />
           <ToastRegistrar />
           {children}
           <ReactQueryDevtools initialIsOpen={false} />

@@ -23,10 +23,9 @@ export type SubmissionType =
 
 export type VerificationType =
   | 'AI Verification'
-  | 'Human Review'
+  | 'Creator Review'
   | 'AI First'
   | 'Consensus'
-  | 'Creator Review'
   | 'Hybrid';
 
 export type VerificationMode = 'AI' | 'MANUAL' | 'BOTH';

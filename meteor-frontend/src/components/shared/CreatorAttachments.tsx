@@ -36,7 +36,7 @@ export const CreatorAttachments: React.FC<CreatorAttachmentsProps> = ({
   const [uploading, setUploading] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
 
-  // Sync with prop changes
+  // Sync with prop changes (only on initial load or explicit reset)
   useEffect(() => {
     setFiles(value || []);
   }, [value]);
@@ -129,7 +129,7 @@ export const CreatorAttachments: React.FC<CreatorAttachmentsProps> = ({
     onChange(filteredFiles);
   };
 
-  const currentFiles = value || [];
+  const currentFiles = files;
 
   return (
     <div className="space-y-2">

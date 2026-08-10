@@ -61,6 +61,7 @@ export type Task = {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   mySubmission?: TaskSubmission | null;
+  attachments?: any[];
 };
 
 export type CreateTaskDto = {
@@ -121,6 +122,7 @@ export type TaskItem = {
     suggestions: string[];
     consensusScore: number;
   };
+  attachments?: any[];
 };
 
 export type TransactionItem = {

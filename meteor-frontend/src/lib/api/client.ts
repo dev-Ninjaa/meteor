@@ -42,10 +42,15 @@ export class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}, retry = true): Promise<T> {
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    const body = options.body;
+    const isFormData = body instanceof FormData;
+    
+    const headers: HeadersInit = isFormData 
+      ? { ...options.headers }  // Let browser set Content-Type with boundary
+      : {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        };
 
     if (this.accessToken) {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${this.accessToken}`;
@@ -185,7 +190,7 @@ export class ApiClient {
   post<T>(url: string, body?: unknown) {
     return this.request<T>(url, {
       method: 'POST',
-      body: body !== undefined ? JSON.stringify(body) : undefined
+      body: body !== undefined ? (body instanceof FormData ? body : JSON.stringify(body)) : undefined,
     });
   }
 
