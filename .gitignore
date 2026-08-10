@@ -25,6 +25,9 @@ build/
 .DS_Store
 Thumbs.db
 
+# OpenCode
+.omo/
+
 # Logs
 *.log
 npm-debug.log*
