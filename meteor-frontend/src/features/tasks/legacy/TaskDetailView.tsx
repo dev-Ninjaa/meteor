@@ -111,7 +111,7 @@ export const TaskDetailView: React.FC<TaskDetailViewProps> = ({ taskId, onBack }
   // Backend Task type fields: title, description, reward, status, tags, workersRequired, workersJoined, workersCompleted, maxWorkers, verificationMode, escrowStatus, createdById, createdAt, updatedAt
   const VERIFICATION_TYPE_MAP: Record<string, string> = {
     'AI': 'AI Verification',
-    'MANUAL': 'Human Review',
+    'MANUAL': 'Creator Review',
     'BOTH': 'Hybrid',
   };
   

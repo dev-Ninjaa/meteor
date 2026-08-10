@@ -35,7 +35,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
   const verificationTypeMap: Record<string, string> = {
     'AI': 'AI Verification',
-    'MANUAL': 'Human Review',
+    'MANUAL': 'Creator Review',
     'BOTH': 'Hybrid',
   };
 
@@ -69,7 +69,9 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const isCompleted = task.status === 'COMPLETED' || task.status === 'CANCELLED';
   const isVerified = task.mySubmission?.verification?.status === 'PASSED' || task.mySubmission?.verification?.status === 'APPROVED';
   const hasClaimed = task.mySubmission?.claimed === true;
-  const canClaim = isCompleted && hasSubmission && isVerified && !hasClaimed;
+  
+  // Can claim if: verified + not claimed + (task completed OR verification passed and escrow locked)
+  const canClaim = hasSubmission && isVerified && !hasClaimed && (isCompleted || task.escrowStatus === 'LOCKED');
 
   // Check if current user is the creator (createdById is a DB UUID → compare with user id)
   const isCreator = task.createdById === currentUser?.id;
@@ -208,6 +210,65 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 <h3 className="font-heading italic text-lg text-white mb-2">Description</h3>
                 <p className="text-white/70 leading-relaxed whitespace-pre-wrap">{task.description}</p>
               </div>
+
+              {/* Creator Attachments */}
+              {task.attachments && task.attachments.length > 0 && (
+                <div className="p-4 rounded-2xl bg-[#111113] border border-white/10">
+                  <h3 className="font-heading italic text-lg text-white mb-3">Reference Files</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {task.attachments.map((attachment: any, index: number) => (
+                      <div key={index} className="rounded-xl bg-black/30 border border-white/10 overflow-hidden">
+                        {attachment.type?.startsWith('image/') && attachment.preview && (
+                          <img 
+                            src={attachment.preview} 
+                            alt={attachment.name || 'Attachment'} 
+                            className="w-full h-32 object-cover"
+                          />
+                        )}
+                        {attachment.type?.startsWith('video/') && attachment.preview && (
+                          <video 
+                            src={attachment.preview} 
+                            controls 
+                            className="w-full h-32"
+                          />
+                        )}
+                        {attachment.type?.startsWith('audio/') && attachment.preview && (
+                          <audio 
+                            src={attachment.preview} 
+                            controls 
+                            className="w-full h-32"
+                          />
+                        )}
+                        {!attachment.type?.startsWith('image/') && !attachment.type?.startsWith('video/') && !attachment.type?.startsWith('audio/') && (
+                          <div className="flex items-center justify-center h-32 p-4">
+                            <div className="text-center">
+                              <span className="text-3xl">📄</span>
+                              <p className="text-xs text-white/60 mt-1 truncate w-full">{attachment.name}</p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="p-3 bg-black/20 border-t border-white/5">
+                          <p className="text-xs font-mono text-white/70 truncate">{attachment.name}</p>
+                          <p className="text-[10px] font-mono text-white/40 mt-1">
+                            {attachment.size ? `${(attachment.size / 1024).toFixed(1)} KB` : ''}
+                            {attachment.cid && ` • IPFS: ${attachment.cid.slice(0, 12)}...`}
+                          </p>
+                          {attachment.url && (
+                            <a 
+                              href={attachment.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-[10px] font-mono text-[#836EF9] underline mt-1 inline-block"
+                            >
+                              View on IPFS
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Tags */}
               {task.tags && task.tags.length > 0 && (

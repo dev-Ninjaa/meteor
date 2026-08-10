@@ -83,7 +83,7 @@ export function usePublishFlow({
       if (suggestion.verificationMode) {
         const modeMap: Record<string, any> = {
           'AI': 'AI Verification',
-          'MANUAL': 'Human Review',
+          'MANUAL': 'Creator Review',
           'BOTH': 'Hybrid',
         };
         form.setField('verificationType', modeMap[suggestion.verificationMode] || 'AI Verification');
@@ -108,11 +108,11 @@ export function usePublishFlow({
         tags: [form.category],
         workersRequired: parseInt(form.workers, 10) || 5,
         maxWorkers: parseInt(form.workers, 10) || 5,
-        verificationMode: form.verificationType === 'AI Verification' ? 'AI' : form.verificationType === 'Human Review' ? 'MANUAL' : 'BOTH',
+        verificationMode: form.verificationType === 'AI Verification' ? 'AI' : form.verificationType === 'Creator Review' ? 'MANUAL' : 'BOTH',
         submissionType: form.submissionType,
         submissionOptions: form.submissionOptions || [],
         allowAiVerification: true,
-        manualVerificationRequired: form.verificationType === 'Human Review',
+        manualVerificationRequired: form.verificationType === 'Creator Review',
         tokenAddress: undefined,
         attachments: form.attachments || [],
       },

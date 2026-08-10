@@ -1,5 +1,5 @@
 import { TaskCategory, SubmissionType, VerificationType } from '../../../types';
-import { SubmissionRenderer } from '../../../components/shared/SubmissionRenderer';
+import { CreatorAttachments } from '../../../components/shared/CreatorAttachments';
 
 interface TaskFormState {
   prompt: string;
@@ -94,13 +94,9 @@ export function TaskFormFields({ form }: TaskFormFieldsProps) {
 
       {/* Creator Attachments (Optional) */}
       <div className="sm:col-span-2">
-        <label className="text-xs font-mono text-white/60 mb-1 block">
-          Attachments (Optional) <span className="text-white/40">— images, docs, reference files for workers</span>
-        </label>
-        <SubmissionRenderer
-          type="file"
+        <CreatorAttachments
           value={form.attachments || []}
-          onChange={(files) => form.setField('attachments', files as any)}
+          onChange={(files) => form.setField('attachments', files)}
         />
       </div>
 
@@ -112,11 +108,16 @@ export function TaskFormFields({ form }: TaskFormFieldsProps) {
           className="w-full bg-[#111113] border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#836EF9]"
         >
           <option value="AI Verification">AI Verification</option>
-          <option value="Human Review">Human Review</option>
-          <option value="AI First">AI First Pipeline</option>
-          <option value="Consensus">Swarm Consensus</option>
           <option value="Creator Review">Creator Review</option>
-          <option value="Hybrid">Hybrid (AI + Human)</option>
+          <option value="AI First" disabled className="text-white/30">
+            AI First Pipeline (coming soon)
+          </option>
+          <option value="Consensus" disabled className="text-white/30">
+            Swarm Consensus (coming soon)
+          </option>
+          <option value="Hybrid" disabled className="text-white/30">
+            Hybrid (AI + Human) (coming soon)
+          </option>
         </select>
       </div>
     </div>
