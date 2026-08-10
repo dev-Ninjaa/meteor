@@ -1,4 +1,4 @@
-import { Controller, Get, Logger } from '@nestjs/common';
+import { Controller, Get, All, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from './common/decorators/public.decorator';
 import { PrismaService } from './database/prisma.service';
@@ -14,7 +14,7 @@ export class AppController {
     private readonly redis: RedisService,
   ) {}
 
-  @Get('/')
+  @All('/')
   @Public()
   @ApiOperation({ summary: 'Root endpoint' })
   @ApiResponse({ status: 200, description: 'Service status' })
