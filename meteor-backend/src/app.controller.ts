@@ -14,6 +14,14 @@ export class AppController {
     private readonly redis: RedisService,
   ) {}
 
+  @Get('/')
+  @Public()
+  @ApiOperation({ summary: 'Root endpoint' })
+  @ApiResponse({ status: 200, description: 'Service status' })
+  getRoot(): Record<string, string> {
+    return { name: 'Meteor API', status: 'online', version: '1.0.0' };
+  }
+
   @Get('health')
   @Public()
   @ApiOperation({ summary: 'Full health check (DB + Redis)' })
