@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { monadConfig } from '../config';
+import { PrismaService } from '../database/prisma.service';
 import { BlockchainService } from './blockchain.service';
 
 describe('BlockchainService', () => {
@@ -14,7 +15,7 @@ describe('BlockchainService', () => {
           load: [monadConfig],
         }),
       ],
-      providers: [BlockchainService],
+      providers: [BlockchainService, PrismaService],
     }).compile();
 
     service = module.get<BlockchainService>(BlockchainService);
