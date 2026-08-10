@@ -33,8 +33,14 @@ export class SubmissionResponseDto {
   @ApiPropertyOptional({ example: 'https://github.com/user/repo/pull/1' })
   proof?: string | null;
 
+  @ApiPropertyOptional({ example: 'text' })
+  submissionType?: string | null;
+
   @ApiProperty({ example: 'PENDING', enum: ['PENDING', 'APPROVED', 'REJECTED'] })
   status!: string;
+
+  @ApiProperty({ example: false })
+  claimed!: boolean;
 
   @ApiPropertyOptional()
   aiScore?: number | null;

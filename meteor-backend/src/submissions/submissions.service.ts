@@ -66,6 +66,7 @@ export class SubmissionsService {
         data: {
           content: dto.content,
           proof: dto.proof,
+          submissionType: dto.submissionType || task.submissionType || 'text',
           taskId,
           workerId,
         },
@@ -178,6 +179,7 @@ export class SubmissionsService {
       taskRequirements: task.description,
       submissionContent: submission.content,
       submissionProof: submission.proof ?? undefined,
+      submissionType: submission.submissionType ?? 'text',
     });
 
     const verificationStatus: VerificationStatus = result.passed ? 'PASSED' : 'FAILED';
@@ -421,7 +423,9 @@ export class SubmissionsService {
       id: string;
       content: string;
       proof: string | null;
+      submissionType: string | null;
       status: SubmissionStatus;
+      claimed: boolean;
       aiScore: number | null;
       aiFeedback: string | null;
       taskId: string;
@@ -443,7 +447,9 @@ export class SubmissionsService {
       id: submission.id,
       content: submission.content,
       proof: submission.proof,
+      submissionType: submission.submissionType,
       status: submission.status,
+      claimed: submission.claimed,
       aiScore: submission.aiScore,
       aiFeedback: submission.aiFeedback,
       taskId: submission.taskId,

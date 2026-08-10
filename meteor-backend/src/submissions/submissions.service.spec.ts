@@ -12,6 +12,7 @@ import {
   Submission as SubmissionModel,
   Verification,
   User,
+  Task as TaskModel,
 } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { AiService } from '../ai/ai.service';
@@ -71,6 +72,8 @@ function createMockTask(
     workersCompleted: 0,
     maxWorkers: 5,
     verificationMode: 'AI' as VerificationMode,
+    submissionType: 'text',
+    submissionOptions: [],
     allowAiVerification: true,
     manualVerificationRequired: false,
     escrowStatus: 'UNLOCKED' as EscrowStatus,
@@ -332,6 +335,27 @@ describe('SubmissionsService', () => {
           return cb(tx);
         });
 
+      jest.spyOn(prisma.task, 'findUnique').mockResolvedValue({
+        ...task,
+        submissions: [
+          {
+            ...mockSub,
+            verification: {
+              id: 'verification-id',
+              status: 'PASSED' as VerificationStatus,
+              aiScore: 0.95,
+              aiFeedback: 'Great work!',
+              manualNotes: null,
+              isManual: false,
+            },
+          },
+        ],
+      } as unknown as TaskModel);
+      jest.spyOn(prisma.task, 'update').mockResolvedValue({
+        ...task,
+        status: 'COMPLETED' as TaskStatus,
+      } as unknown as TaskModel);
+
       const result = await service.verifyAi('submission-id');
 
       expect(result.status).toBe('APPROVED');
@@ -378,6 +402,23 @@ describe('SubmissionsService', () => {
           } as unknown as SubmissionModel);
           return cb(tx);
         });
+
+      jest.spyOn(prisma.task, 'findUnique').mockResolvedValue({
+        ...task,
+        submissions: [
+          {
+            ...mockSub,
+            verification: {
+              id: 'verification-id',
+              status: 'FAILED' as VerificationStatus,
+              aiScore: 0.3,
+              aiFeedback: 'Does not meet requirements',
+              manualNotes: null,
+              isManual: false,
+            },
+          },
+        ],
+      } as unknown as TaskModel);
 
       const result = await service.verifyAi('submission-id');
 
@@ -453,6 +494,26 @@ describe('SubmissionsService', () => {
           } as unknown as SubmissionModel);
           return cb(tx);
         });
+
+      jest.spyOn(prisma.task, 'findUnique').mockResolvedValue({
+        ...task,
+        submissions: [
+          {
+            ...mockSub,
+            verification: {
+              id: 'verification-id',
+              status: 'PASSED' as VerificationStatus,
+              manualNotes: 'Good job',
+              isManual: true,
+              verifiedById: 'creator-id',
+            },
+          },
+        ],
+      } as unknown as TaskModel);
+      jest.spyOn(prisma.task, 'update').mockResolvedValue({
+        ...task,
+        status: 'COMPLETED' as TaskStatus,
+      } as unknown as TaskModel);
 
       const result = await service.verifyManual('submission-id', 'creator-id', {
         status: 'APPROVED',
@@ -551,6 +612,22 @@ describe('SubmissionsService', () => {
           } as unknown as SubmissionModel);
           return cb(tx);
         });
+
+      jest.spyOn(prisma.task, 'findUnique').mockResolvedValue({
+        ...task,
+        submissions: [
+          {
+            ...mockSub,
+            verification: {
+              id: 'ai-verification',
+              status: 'FAILED' as VerificationStatus,
+              isManual: true,
+              verifiedById: 'creator-id',
+              manualNotes: 'Actually incorrect',
+            },
+          },
+        ],
+      } as unknown as TaskModel);
 
       const result = await service.verifyManual('submission-id', 'creator-id', {
         status: 'REJECTED',
