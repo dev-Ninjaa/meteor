@@ -99,11 +99,14 @@ model Task {
   workersCompleted Int         @default(0) @map("workers_completed")
   maxWorkers      Int          @default(1) @map("max_workers")
   verificationMode VerificationMode @default(AI) @map("verification_mode")
-  allowAiVerification    Boolean @default(true) @map("allow_ai_verification")
-  manualVerificationRequired Boolean @default(false) @map("manual_verification_required")
-  escrowStatus    EscrowStatus @default(UNLOCKED) @map("escrow_status")
+  submissionType  String  @default("text") @map("submission_type")
+  submissionOptions String[] @default([]) @map("submission_options")
+    allowAiVerification    Boolean @default(true) @map("allow_ai_verification")
+    manualVerificationRequired Boolean @default(false) @map("manual_verification_required")
+    escrowStatus    EscrowStatus @default(UNLOCKED) @map("escrow_status")
+    attachments     Json?      @map("attachments")
 
-  createdById String @map("created_by_id") @db.Uuid
+    createdById String @map("created_by_id") @db.Uuid
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -138,7 +141,9 @@ model Submission {
   id        String           @id @default(uuid()) @db.Uuid
   content   String
   proof     String?
+  submissionType String @default("text") @map("submission_type")
   status    SubmissionStatus @default(PENDING)
+  claimed   Boolean @default(false)
   aiScore   Float?           @map("ai_score")
   aiFeedback String?         @map("ai_feedback")
 
